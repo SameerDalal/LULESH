@@ -154,6 +154,22 @@ Additional BSD Notice
 #include <sys/time.h>
 #include <iostream>
 #include <unistd.h>
+#include <stdlib.h>
+#include <string>
+#include <stdio.h>
+#include <libunwind.h>
+#include <execinfo.h>
+#include <iostream>
+#include <cstdlib>
+#include <cstring>
+#include "ContextNode.h"
+#include "ContextTree.h"
+#include <vector>
+#include <algorithm>
+#include <fstream>
+#include <cxxabi.h>
+#include <iomanip> // std::hex
+#include <regex>
 
 #if _OPENMP
 # include <omp.h>
@@ -162,6 +178,250 @@ Additional BSD Notice
 #include "lulesh.h"
 
 /* Work Routines */
+class ContextNode;
+
+class ContextTree;
+
+struct functionInformation {
+    std::string functionName;
+    std::vector<std::string> functionParameters; 
+};
+
+void buildCCT(int depth);
+functionInformation symbolsParser(std::string functionSignature);
+void createObjects( std::string functionName,
+                    std::vector<std::string> params,
+                    unw_word_t start_ip, 
+                    unw_word_t end_ip, 
+                    unw_word_t lsda, 
+                    unw_word_t handler, 
+                    unw_word_t global_pointer, 
+                    unw_word_t flags);
+void assignParentAndChild();
+void buildTree(ContextNode* node, bool multipleChildren);
+void free();
+
+// test functions
+void test_1(int test, std::string test2);
+void test_2();
+void test_3();
+void test_4_contextTree();
+
+char **stack_symbols;
+
+std::vector<ContextNode*> pointerArray;
+
+std::ofstream dotFileWrite("tree.dot");
+
+int prev_stack_depth = 0;
+
+int global_node_counter; 
+
+void buildCCT(int start = 0) {
+
+    std::vector<std::string> functions;
+
+    void *stack_trace[128];
+    int stack_depth = backtrace(stack_trace, 128);
+
+    unw_context_t context;
+    unw_cursor_t cursor;
+
+    unw_getcontext(&context);
+    unw_init_local(&cursor, &context);
+
+    for (int i = start; i < stack_depth; i++) {
+        
+        int demangle_status;
+        unw_word_t offset, pc;
+        char proc_name[128];
+        unw_get_reg(&cursor, UNW_REG_IP, &pc);
+        proc_name[0];
+        const char* func_name;
+
+        // get the function signature at the current frame 
+        // also try to get the variable name of argument
+        // get formal and actual argument
+        unw_get_proc_name(&cursor, proc_name, sizeof(proc_name), &offset);
+  
+        char* demangled_name = abi::__cxa_demangle(proc_name, nullptr, nullptr, &demangle_status);
+
+        if(demangled_name) {
+            func_name = demangled_name;
+        } else {
+            func_name = proc_name;
+        }
+
+        functions.push_back(func_name);
+
+        std::cout << "Function Name: " << func_name << std::endl;
+
+        functionInformation funcInfo = symbolsParser(func_name);
+
+        //Get other function information
+        unw_proc_info_t proc_info;
+
+        unw_get_proc_info(&cursor, &proc_info);
+
+        
+        createObjects(funcInfo.functionName, funcInfo.functionParameters, proc_info.start_ip, proc_info.end_ip, proc_info.lsda, proc_info.handler, proc_info.gp, proc_info.flags);
+        
+        if (demangled_name) {
+            std::free(demangled_name);
+        }
+
+        unw_step(&cursor);
+    }
+    
+    assignParentAndChild();
+    
+
+    if(global_node_counter > 0) {
+
+        dotFileWrite.close();
+        dotFileWrite.open("tree.dot", std::ofstream::trunc);
+        dotFileWrite << "digraph ContextTree {" << std::endl;
+    }
+
+    global_node_counter = 0;
+    buildTree(pointerArray[0], false);
+
+    prev_stack_depth = stack_depth;
+
+    
+}
+
+functionInformation symbolsParser(std::string functionSignature) {
+    functionInformation info;
+
+    int openingParenthesis = functionSignature.find('(');
+
+    if (openingParenthesis != std::string::npos) {
+        info.functionName = functionSignature.substr(0, openingParenthesis);
+
+        int closingParenthesis = functionSignature.find(')', openingParenthesis);
+
+        if (closingParenthesis != std::string::npos) {
+            std::string params = functionSignature.substr(openingParenthesis + 1, closingParenthesis - openingParenthesis - 1);
+
+            int startPos = 0;
+            while (startPos < params.length()) {
+                int commaPos = params.find(',', startPos);
+                if (commaPos == std::string::npos) {
+                    info.functionParameters.push_back(params.substr(startPos));
+                    break;
+                } else {
+                    info.functionParameters.push_back(params.substr(startPos, commaPos - startPos));
+                    startPos = commaPos + 1;
+                }
+            }
+        }
+    } else {
+        info.functionName = functionSignature;
+    }
+
+    return info; 
+}
+
+void createObjects( 
+                    std::string functionName,
+                    std::vector<std::string> params,
+                    unw_word_t start_ip, 
+                    unw_word_t end_ip, 
+                    unw_word_t lsda, 
+                    unw_word_t handler, 
+                    unw_word_t global_pointer, 
+                    unw_word_t flags
+                    
+                    ){
+
+    ContextNode* node = new ContextNode(functionName, params, end_ip, lsda, handler, global_pointer, flags);
+        
+    pointerArray.insert(pointerArray.begin() + prev_stack_depth, node);
+    
+    
+}
+
+void assignParentAndChild() {
+
+    for(int i = prev_stack_depth; i < pointerArray.size(); i++) {
+        
+        if(i == 0) {
+            pointerArray[i]->setParent();
+        } else {
+            if(pointerArray[i-1]->functionName() == "buildCCT") {
+                pointerArray[i]->setParent(pointerArray[i-2]);
+                pointerArray[i-2]->setChildren(pointerArray[i]);
+            } else {
+                pointerArray[i]->setParent(pointerArray[i-1]);
+            }
+        }
+        if(i+1 < pointerArray.size()) {
+            pointerArray[i]->setChildren(pointerArray[i+1]);
+        } else {
+            pointerArray[i]->setChildren();
+        }
+    }
+}
+
+void buildTree(ContextNode* node, bool multipleChildren) {
+
+    
+        if(node->functionName() != "NULL") {
+
+        dotFileWrite << "node" << global_node_counter << 
+        " [label=\"" << node->functionName() <<
+        "\\n EndIP: 0x" << std::hex << node->getEndIP() << 
+        "\\n StartIP: 0x" << std::hex << node->getStartIP() <<
+        "\\n LSDA: 0x" << std::hex << node->getLsda() << 
+        "\\n Handler: 0x" << std::hex << node->getHandler() <<
+        "\\n Global Pointer: 0x" << std::hex << node->getGlobalPointer() <<
+        "\\n Flags:" << node->getFlags() <<
+        "\\n Call Count:" << node->getCallCount() << 
+        "\"];" << std::endl;
+
+
+        std::vector<std::string> params;
+        if(multipleChildren) {
+            dotFileWrite << "node" << global_node_counter-1 << " -> node" << global_node_counter+2 << " [label=\" "; 
+            params = node->getParent()->getParameters();
+        } else {
+            dotFileWrite << "node" << global_node_counter << " -> node" << global_node_counter+1 << " [label=\" "; 
+            params = node->getParameters();
+        }
+
+        
+        // for every parameter add another arrow going into the next function
+        for(auto p : params) {
+            dotFileWrite << p << ", ";
+        }
+
+        dotFileWrite << "\"];" << std::endl;
+
+    
+        //check test cases if children has multiple children
+        // parameter issue needs fix
+        
+        if(node->getChildren().size() > 1) {
+            bool isChildren = true;
+            for(auto child : node->getChildren()) {
+                global_node_counter++;
+                buildTree(child, isChildren);
+                isChildren = false;
+                
+            }
+        } else {
+            for(auto child : node->getChildren()) {
+                global_node_counter++;
+                buildTree(child, false);
+                
+            }
+        }
+
+    } else {
+        return;
+    }
+}
 
 static inline
 void TimeIncrement(Domain& domain)
@@ -2742,8 +3002,10 @@ int main(int argc, char *argv[])
 //debug to see region sizes
 //   for(Int_t i = 0; i < locDom->numReg(); i++)
 //      std::cout << "region" << i + 1<< "size" << locDom->regElemSize(i) <<std::endl;
+   dotFileWrite << "digraph ContextTree {" << std::endl;
+   buildCCT();
    while((locDom->time() < locDom->stoptime()) && (locDom->cycle() < opts.its)) {
-
+      buildCCT(prev_stack_depth-1);
       TimeIncrement(*locDom) ;
       LagrangeLeapFrog(*locDom) ;
 
@@ -2755,6 +3017,8 @@ int main(int argc, char *argv[])
          std::cout.unsetf(std::ios_base::floatfield);
       }
    }
+   dotFileWrite << "}" << std::endl;
+   dotFileWrite.close();
 
    // Use reduced max elapsed time
    double elapsed_time;
