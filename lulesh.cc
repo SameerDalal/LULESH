@@ -154,6 +154,7 @@ Additional BSD Notice
 #include <sys/time.h>
 #include <iostream>
 #include <unistd.h>
+
 #include <stdlib.h>
 #include <string>
 #include <stdio.h>
@@ -163,13 +164,16 @@ Additional BSD Notice
 #include <cstdlib>
 #include <cstring>
 #include "ContextNode.h"
-#include "ContextTree.h"
 #include <vector>
 #include <algorithm>
 #include <fstream>
 #include <cxxabi.h>
 #include <iomanip> // std::hex
 #include <regex>
+#include <stack>
+
+
+
 
 #if _OPENMP
 # include <omp.h>
@@ -178,18 +182,16 @@ Additional BSD Notice
 #include "lulesh.h"
 
 /* Work Routines */
-class ContextNode;
 
-class ContextTree;
+class ContextNode;
 
 struct functionInformation {
     std::string functionName;
     std::vector<std::string> functionParameters; 
 };
-
-void buildCCT(int depth);
+void buildCCT(int end);
 functionInformation symbolsParser(std::string functionSignature);
-void createObjects( std::string functionName,
+ContextNode* createNode( std::string functionName,
                     std::vector<std::string> params,
                     unw_word_t start_ip, 
                     unw_word_t end_ip, 
@@ -197,32 +199,21 @@ void createObjects( std::string functionName,
                     unw_word_t handler, 
                     unw_word_t global_pointer, 
                     unw_word_t flags);
-void assignParentAndChild();
-void buildTree(ContextNode* node, bool multipleChildren);
+void writeToDot();
+void assignNode(int parentIdx, int childIdx); 
 void free();
-
-// test functions
-void test_1(int test, std::string test2);
-void test_2();
-void test_3();
-void test_4_contextTree();
 
 char **stack_symbols;
 
-std::vector<ContextNode*> pointerArray;
+ContextNode* startNode;
 
 std::ofstream dotFileWrite("tree.dot");
 
-int prev_stack_depth = 0;
-
-int global_node_counter; 
-
-void buildCCT(int start = 0) {
-
-    std::vector<std::string> functions;
+void buildCCT(int end = 0) {
 
     void *stack_trace[128];
     int stack_depth = backtrace(stack_trace, 128);
+
 
     unw_context_t context;
     unw_cursor_t cursor;
@@ -230,83 +221,96 @@ void buildCCT(int start = 0) {
     unw_getcontext(&context);
     unw_init_local(&cursor, &context);
 
-    for (int i = start; i < stack_depth; i++) {
+
+    std::vector<ContextNode*> nodeArray;
+
+    for (int i = 0; i < stack_depth-end; i++) {
         
         int demangle_status;
         unw_word_t offset, pc;
         char proc_name[128];
         unw_get_reg(&cursor, UNW_REG_IP, &pc);
-        proc_name[0];
-        const char* func_name;
 
         // get the function signature at the current frame 
         // also try to get the variable name of argument
         // get formal and actual argument
-        unw_get_proc_name(&cursor, proc_name, sizeof(proc_name), &offset);
+        if(unw_get_proc_name(&cursor, proc_name, sizeof(proc_name), &offset) != 0) {
+         std::cout << "PROC NAME GET NOT SUCCESSFUL" << std::endl;
+        } else {
+         std::cout << "sucessful" << std::endl;
+        }
+        
+        std::cout << "proc name: " << proc_name << std::endl;
   
         char* demangled_name = abi::__cxa_demangle(proc_name, nullptr, nullptr, &demangle_status);
 
-        if(demangled_name) {
-            func_name = demangled_name;
-        } else {
-            func_name = proc_name;
-        }
+        std::string func_name = (demangled_name) ? demangled_name : proc_name;
 
-        functions.push_back(func_name);
-
-        std::cout << "Function Name: " << func_name << std::endl;
 
         functionInformation funcInfo = symbolsParser(func_name);
 
         //Get other function information
         unw_proc_info_t proc_info;
-
         unw_get_proc_info(&cursor, &proc_info);
 
+        std::cout << "Function information: " << std::endl  
+      << "Function Name: " << funcInfo.functionName << std::endl
+      << "Function startip: " <<  proc_info.start_ip << std::endl
+      << "Function endip: " <<  proc_info.end_ip << std::endl
+      << "Function lsda: " <<  proc_info.lsda << std::endl
+      << "Function handler: " <<  proc_info.handler << std::endl
+      << "Function gp: " <<  proc_info.gp << std::endl
+      << "Function flags: " <<  proc_info.flags << std::endl << std::endl;
+
+        nodeArray.push_back(createNode(funcInfo.functionName, funcInfo.functionParameters, proc_info.start_ip, proc_info.end_ip, proc_info.lsda, proc_info.handler, proc_info.gp, proc_info.flags));
         
-        createObjects(funcInfo.functionName, funcInfo.functionParameters, proc_info.start_ip, proc_info.end_ip, proc_info.lsda, proc_info.handler, proc_info.gp, proc_info.flags);
-        
+        //assign the parent
+        /*
+        Currently dont need to assign child due to parent-child being a 2-way relationship. 
+        If we assign one function as the parent of another function we can assume that the other function is the child. 
+        */ 
+        if(nodeArray.size() > 1) {
+            nodeArray[i-1]->setParent(nodeArray[i]);
+        }
+
         if (demangled_name) {
             std::free(demangled_name);
         }
 
-        unw_step(&cursor);
-    }
-    
-    assignParentAndChild();
-    
+        if(unw_step(&cursor) < 0){
+         std::cout << "NOT SUCCESFUL!!!!!!!!!!!!!!!!!" << std::endl;
+        } else {
+         std::cout << "sucessful" << std::endl;
+        }
 
-    if(global_node_counter > 0) {
-
-        dotFileWrite.close();
-        dotFileWrite.open("tree.dot", std::ofstream::trunc);
-        dotFileWrite << "digraph ContextTree {" << std::endl;
     }
 
-    global_node_counter = 0;
-    buildTree(pointerArray[0], false);
+    
+    
+    startNode = nodeArray[0];
 
-    prev_stack_depth = stack_depth;
+    writeToDot();
 
+    nodeArray.clear();
+
+    
     
 }
 
 functionInformation symbolsParser(std::string functionSignature) {
     functionInformation info;
 
-    int openingParenthesis = functionSignature.find('(');
+    std::size_t openingParenthesis = functionSignature.find('(');
 
     if (openingParenthesis != std::string::npos) {
         info.functionName = functionSignature.substr(0, openingParenthesis);
-
-        int closingParenthesis = functionSignature.find(')', openingParenthesis);
+        std::size_t closingParenthesis = functionSignature.find(')', openingParenthesis);
 
         if (closingParenthesis != std::string::npos) {
             std::string params = functionSignature.substr(openingParenthesis + 1, closingParenthesis - openingParenthesis - 1);
-
-            int startPos = 0;
+            std::size_t startPos = 0;
             while (startPos < params.length()) {
-                int commaPos = params.find(',', startPos);
+                std::size_t commaPos = params.find(',', startPos);
                 if (commaPos == std::string::npos) {
                     info.functionParameters.push_back(params.substr(startPos));
                     break;
@@ -320,10 +324,10 @@ functionInformation symbolsParser(std::string functionSignature) {
         info.functionName = functionSignature;
     }
 
-    return info; 
+    return info;
 }
 
-void createObjects( 
+ContextNode* createNode( 
                     std::string functionName,
                     std::vector<std::string> params,
                     unw_word_t start_ip, 
@@ -332,100 +336,55 @@ void createObjects(
                     unw_word_t handler, 
                     unw_word_t global_pointer, 
                     unw_word_t flags
-                    
                     ){
 
-    ContextNode* node = new ContextNode(functionName, params, end_ip, lsda, handler, global_pointer, flags);
-        
-    pointerArray.insert(pointerArray.begin() + prev_stack_depth, node);
-    
+    ContextNode* node = new ContextNode(functionName, params, start_ip, end_ip, lsda, handler, global_pointer, flags);
+
+    return node;
     
 }
 
-void assignParentAndChild() {
 
-    for(int i = prev_stack_depth; i < pointerArray.size(); i++) {
-        
-        if(i == 0) {
-            pointerArray[i]->setParent();
-        } else {
-            if(pointerArray[i-1]->functionName() == "buildCCT") {
-                pointerArray[i]->setParent(pointerArray[i-2]);
-                pointerArray[i-2]->setChildren(pointerArray[i]);
-            } else {
-                pointerArray[i]->setParent(pointerArray[i-1]);
-            }
-        }
-        if(i+1 < pointerArray.size()) {
-            pointerArray[i]->setChildren(pointerArray[i+1]);
-        } else {
-            pointerArray[i]->setChildren();
-        }
-    }
+void writeToDot() {
+
+   ContextNode* node = startNode;
+
+   while(node->getParent() != nullptr) {
+      if(node == nullptr) {
+         return;
+      }
+   // Create the dot file entry for the current node
+      dotFileWrite << "node" << node->getStartIP() << 
+      " [label=\"" << node->functionName() <<
+      "\\n EndIP: 0x" << std::hex << node->getEndIP() << 
+      "\\n StartIP: 0x" << std::hex << node->getStartIP() <<
+      "\\n LSDA: 0x" << std::hex << node->getLsda() << 
+      "\\n Handler: 0x" << std::hex << node->getHandler() <<
+      "\\n Global Pointer: 0x" << std::hex << node->getGlobalPointer() <<
+      "\\n Flags:" << node->getFlags() <<
+      "\\n Call Count:" << node->getCallCount() << 
+      "\"];" << std::endl;
+
+      // for every parameter add another arrow going into the next function
+      if(node->getParameters().size() > 0) {
+      for(auto params : node->getParameters()) {
+         dotFileWrite << "node" << node->getParent()->getStartIP() << " -> node" << node->getStartIP() << " [label=\" "; 
+         dotFileWrite << params << ", ";
+         dotFileWrite << "\"];" << std::endl;
+      }
+      } else {
+      // for functions that dont have parameters
+         dotFileWrite << "node" << node->getParent()->getStartIP() << " -> node" << node->getStartIP() << std::endl;
+      }
+
+      node = node->getParent();
+   }
+
 }
 
-void buildTree(ContextNode* node, bool multipleChildren) {
 
-    
-        if(node->functionName() != "NULL") {
-
-        dotFileWrite << "node" << global_node_counter << 
-        " [label=\"" << node->functionName() <<
-        "\\n EndIP: 0x" << std::hex << node->getEndIP() << 
-        "\\n StartIP: 0x" << std::hex << node->getStartIP() <<
-        "\\n LSDA: 0x" << std::hex << node->getLsda() << 
-        "\\n Handler: 0x" << std::hex << node->getHandler() <<
-        "\\n Global Pointer: 0x" << std::hex << node->getGlobalPointer() <<
-        "\\n Flags:" << node->getFlags() <<
-        "\\n Call Count:" << node->getCallCount() << 
-        "\"];" << std::endl;
-
-
-        std::vector<std::string> params;
-        if(multipleChildren) {
-            dotFileWrite << "node" << global_node_counter-1 << " -> node" << global_node_counter+2 << " [label=\" "; 
-            params = node->getParent()->getParameters();
-        } else {
-            dotFileWrite << "node" << global_node_counter << " -> node" << global_node_counter+1 << " [label=\" "; 
-            params = node->getParameters();
-        }
-
-        
-        // for every parameter add another arrow going into the next function
-        for(auto p : params) {
-            dotFileWrite << p << ", ";
-        }
-
-        dotFileWrite << "\"];" << std::endl;
-
-    
-        //check test cases if children has multiple children
-        // parameter issue needs fix
-        
-        if(node->getChildren().size() > 1) {
-            bool isChildren = true;
-            for(auto child : node->getChildren()) {
-                global_node_counter++;
-                buildTree(child, isChildren);
-                isChildren = false;
-                
-            }
-        } else {
-            for(auto child : node->getChildren()) {
-                global_node_counter++;
-                buildTree(child, false);
-                
-            }
-        }
-
-    } else {
-        return;
-    }
-}
-
-static inline
 void TimeIncrement(Domain& domain)
-{
+{  
    Real_t targetdt = domain.stoptime() - domain.time() ;
 
    if ((domain.dtfixed() <= Real_t(0.0)) && (domain.cycle() != Int_t(0))) {
@@ -479,11 +438,14 @@ void TimeIncrement(Domain& domain)
    domain.time() += domain.deltatime() ;
 
    ++domain.cycle() ;
+
+   std::cout << "Called time increment" << std::endl;
+   buildCCT(2);
+
 }
 
 /******************************************/
 
-static inline
 void CollectDomainNodesToElemNodes(Domain &domain,
                                    const Index_t* elemToNode,
                                    Real_t elemX[8],
@@ -2857,9 +2819,10 @@ void CalcTimeConstraintsForElems(Domain& domain) {
 
 /******************************************/
 
-static inline
+
 void LagrangeLeapFrog(Domain& domain)
 {
+   buildCCT(2);
 #ifdef SEDOV_SYNC_POS_VEL_LATE
    Domain_member fieldData[6] ;
 #endif
@@ -2902,6 +2865,7 @@ void LagrangeLeapFrog(Domain& domain)
    CommSyncPosVel(domain) ;
 #endif
 #endif   
+
 }
 
 
@@ -2909,12 +2873,16 @@ void LagrangeLeapFrog(Domain& domain)
 
 int main(int argc, char *argv[])
 {
+   dotFileWrite << "digraph ContextTree {" << std::endl;
+   buildCCT(0);
    Domain *locDom ;
    int numRanks ;
    int myRank ;
    struct cmdLineOpts opts;
+   
 
-#if USE_MPI   
+#if USE_MPI  
+   std::cout << "USED MPI" << std::endl;
    Domain_member fieldData ;
    
 #ifdef _OPENMP
@@ -2937,7 +2905,6 @@ int main(int argc, char *argv[])
    numRanks = 1;
    myRank = 0;
 #endif   
-
    /* Set defaults that can be overridden by command line opts */
    opts.its = 9999999;
    opts.nx  = 30;
@@ -3002,23 +2969,33 @@ int main(int argc, char *argv[])
 //debug to see region sizes
 //   for(Int_t i = 0; i < locDom->numReg(); i++)
 //      std::cout << "region" << i + 1<< "size" << locDom->regElemSize(i) <<std::endl;
-   dotFileWrite << "digraph ContextTree {" << std::endl;
-   buildCCT();
-   while((locDom->time() < locDom->stoptime()) && (locDom->cycle() < opts.its)) {
-      buildCCT(prev_stack_depth-1);
-      TimeIncrement(*locDom) ;
-      LagrangeLeapFrog(*locDom) ;
+//   while((locDom->time() < locDom->stoptime()) && (locDom->cycle() < opts.its))
 
+   buildCCT(2);
+   for (int i = 0; i < 10; i++){
+      TimeIncrement(*locDom);
+      
+
+   /*
+      
+      LagrangeLeapFrog(*locDom);
       if ((opts.showProg != 0) && (opts.quiet == 0) && (myRank == 0)) {
          std::cout << "cycle = " << locDom->cycle()       << ", "
-                   << std::scientific
-                   << "time = " << double(locDom->time()) << ", "
-                   << "dt="     << double(locDom->deltatime()) << "\n";
+                     << std::scientific
+                     << "time = " << double(locDom->time()) << ", "
+                     << "dt="     << double(locDom->deltatime()) << "\n";
          std::cout.unsetf(std::ios_base::floatfield);
       }
+      */
    }
+
+
+
    dotFileWrite << "}" << std::endl;
    dotFileWrite.close();
+
+   delete[] stack_symbols;
+
 
    // Use reduced max elapsed time
    double elapsed_time;
@@ -3051,6 +3028,7 @@ int main(int argc, char *argv[])
 #if USE_MPI
    MPI_Finalize() ;
 #endif
-
+   delete[] stack_symbols;
    return 0 ;
 }
+

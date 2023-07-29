@@ -1,0 +1,11 @@
+Disable OpenMP
+    Use command: make USE_MPI=0
+    Change SERCXX to have: -DUSE_MPI=0
+    Change MPICXX to have: -DUSE_MPI=0
+
+Do not use static inline
+    Remove static inline from all functions that contain it
+    Potentially use __attribute__((noinline)) before function implementation
+
+Change optimization level
+    Change compile flag -O3 to -O0 or -O1 (with -O3 compiler attempts function inlining and loop unrolling)

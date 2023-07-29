@@ -8,8 +8,8 @@ LULESH_EXEC = lulesh2.0
 MPI_INC = /opt/local/include/openmpi
 MPI_LIB = /opt/local/lib
 
-SERCXX = g++ -DUSE_MPI=1
-MPICXX = mpic++ -DUSE_MPI=1
+SERCXX = g++ -DUSE_MPI=0
+MPICXX = mpic++ -DUSE_MPI=0
 CXX = $(MPICXX)
 
 SOURCES2.0 = \
@@ -18,13 +18,16 @@ SOURCES2.0 = \
     lulesh-viz.cc \
     lulesh-util.cc \
     lulesh-init.cc \
-    ContextNode.cpp \
-    ContextTree.cpp
+    ContextNode.cpp 
 OBJECTS2.0 = $(SOURCES2.0:.cc=.o)
 
 #Default build suggestions with OpenMP for g++
-CXXFLAGS = -g -O3 -fopenmp -I. -Wall
-LDFLAGS = -g -O3 -fopenmp -lunwind -lunwind-x86_64
+#CXXFLAGS = -g -O3 -fopenmp -I. -Wall
+#LDFLAGS = -g -O3 -fopenmp -lunwind -lunwind-x86_64
+
+CXXFLAGS = -g -O0 -I. -Wall
+LDFLAGS = -g -O0 -lunwind -lunwind-x86_64
+
 
 #Below are reasonable default flags for a serial build
 #CXXFLAGS = -g -O3 -I. -Wall
@@ -60,4 +63,3 @@ clean:
 
 tar: clean
 	cd .. ; tar cvf lulesh-2.0.tar LULESH-2.0 ; mv lulesh-2.0.tar LULESH-2.0
-

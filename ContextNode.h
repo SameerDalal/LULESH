@@ -18,6 +18,7 @@ private:
     ContextNode* parent;
     std::vector<ContextNode*> children;
     int callCount = 0;
+    bool isInTree;
 public:
     ContextNode(std::string funcName = "",
                 std::vector<std::string> parameters = {},
@@ -31,6 +32,7 @@ public:
     void setChildren(ContextNode* child = nullptr);
     void setParent(ContextNode* parent = nullptr);
     void setCallCount();
+    void setIfInTree(bool inTree);
 
     std::string functionName();
     std::vector<std::string> getParameters();
@@ -44,6 +46,7 @@ public:
     ContextNode* getParent();
     std::vector<ContextNode*> getChildren();
     int getCallCount();
+    bool inTree();
 };
 
 #endif // CONTEXTNODE_H

@@ -5,7 +5,7 @@
 
 //private instance variables
 //each node will store the symbols function name and memory address
-ContextNode* nullNode = new ContextNode("NULL", {}, {}, {}, {}, {}, {}, {});
+ContextNode nullNode("NULL", {}, {}, {}, {}, {}, {}, {});
 
 std::string funcName;
 std::vector<std::string> parameters;
@@ -20,6 +20,8 @@ unw_word_t flags;
 ContextNode* parent;
 std::vector<ContextNode*> children;
 int callCount;
+
+bool isInTree = false;
 
 
 ContextNode::ContextNode(std::string funcName,
@@ -38,7 +40,7 @@ ContextNode::ContextNode(std::string funcName,
       handler(handler),
       global_pointer(global_pointer),
       flags(flags),
-      callCount(0)
+      callCount(1)
 {
 
 }
@@ -64,6 +66,10 @@ void ContextNode::setParent(ContextNode* parent) {
 
 void ContextNode::setCallCount() {
     callCount++;
+}
+
+void ContextNode::setIfInTree(bool inTree) {
+    isInTree = inTree;
 }
 
 // getters
@@ -102,14 +108,14 @@ unw_word_t ContextNode::getFlags() const {
 
 ContextNode* ContextNode::getParent() {
     if(parent == nullptr) {
-        return nullNode;
+        return nullptr;
     } 
     return parent;
 }
 
 std::vector<ContextNode*> ContextNode::getChildren() {
     if (children.size() == 0) {
-        children.insert(children.end(), nullNode);
+        children.insert(children.end(), &nullNode);
     }
     return children;
 }
@@ -118,8 +124,11 @@ int ContextNode::getCallCount(){
     return callCount;
 }
 
+bool ContextNode::inTree() {
+    return isInTree;
+}
+
 
 
 // This class represents each node that will be part of the tree
 // Another class should be built that takes a vector of the ContextNode and forms a tree.
-
