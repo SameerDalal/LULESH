@@ -154,25 +154,11 @@ Additional BSD Notice
 #include <sys/time.h>
 #include <iostream>
 #include <unistd.h>
-
-#include <stdlib.h>
-#include <string>
-#include <stdio.h>
-#include <libunwind.h>
-#include <execinfo.h>
-#include <iostream>
-#include <cstdlib>
-#include <cstring>
-#include "ContextNode.h"
-#include <vector>
-#include <algorithm>
-#include <fstream>
-#include <cxxabi.h>
-#include <iomanip> // std::hex
-#include <regex>
-#include <stack>
+#include <Backtrace.h>
 
 
+#include <memory> //std::addressof
+#include <sstream>
 
 
 #if _OPENMP
@@ -182,206 +168,6 @@ Additional BSD Notice
 #include "lulesh.h"
 
 /* Work Routines */
-
-class ContextNode;
-
-struct functionInformation {
-    std::string functionName;
-    std::vector<std::string> functionParameters; 
-};
-void buildCCT(int end);
-functionInformation symbolsParser(std::string functionSignature);
-ContextNode* createNode( std::string functionName,
-                    std::vector<std::string> params,
-                    unw_word_t start_ip, 
-                    unw_word_t end_ip, 
-                    unw_word_t lsda, 
-                    unw_word_t handler, 
-                    unw_word_t global_pointer, 
-                    unw_word_t flags);
-void writeToDot();
-void assignNode(int parentIdx, int childIdx); 
-void free();
-
-char **stack_symbols;
-
-ContextNode* startNode;
-
-std::ofstream dotFileWrite("tree.dot");
-
-void buildCCT(int end = 0) {
-
-    void *stack_trace[128];
-    int stack_depth = backtrace(stack_trace, 128);
-
-
-    unw_context_t context;
-    unw_cursor_t cursor;
-
-    unw_getcontext(&context);
-    unw_init_local(&cursor, &context);
-
-
-    std::vector<ContextNode*> nodeArray;
-
-    for (int i = 0; i < stack_depth-end; i++) {
-        
-        int demangle_status;
-        unw_word_t offset, pc;
-        char proc_name[128];
-        unw_get_reg(&cursor, UNW_REG_IP, &pc);
-
-        // get the function signature at the current frame 
-        // also try to get the variable name of argument
-        // get formal and actual argument
-        if(unw_get_proc_name(&cursor, proc_name, sizeof(proc_name), &offset) != 0) {
-         std::cout << "PROC NAME GET NOT SUCCESSFUL" << std::endl;
-        } else {
-         std::cout << "sucessful" << std::endl;
-        }
-        
-        std::cout << "proc name: " << proc_name << std::endl;
-  
-        char* demangled_name = abi::__cxa_demangle(proc_name, nullptr, nullptr, &demangle_status);
-
-        std::string func_name = (demangled_name) ? demangled_name : proc_name;
-
-
-        functionInformation funcInfo = symbolsParser(func_name);
-
-        //Get other function information
-        unw_proc_info_t proc_info;
-        unw_get_proc_info(&cursor, &proc_info);
-
-        std::cout << "Function information: " << std::endl  
-      << "Function Name: " << funcInfo.functionName << std::endl
-      << "Function startip: " <<  proc_info.start_ip << std::endl
-      << "Function endip: " <<  proc_info.end_ip << std::endl
-      << "Function lsda: " <<  proc_info.lsda << std::endl
-      << "Function handler: " <<  proc_info.handler << std::endl
-      << "Function gp: " <<  proc_info.gp << std::endl
-      << "Function flags: " <<  proc_info.flags << std::endl << std::endl;
-
-        nodeArray.push_back(createNode(funcInfo.functionName, funcInfo.functionParameters, proc_info.start_ip, proc_info.end_ip, proc_info.lsda, proc_info.handler, proc_info.gp, proc_info.flags));
-        
-        //assign the parent
-        /*
-        Currently dont need to assign child due to parent-child being a 2-way relationship. 
-        If we assign one function as the parent of another function we can assume that the other function is the child. 
-        */ 
-        if(nodeArray.size() > 1) {
-            nodeArray[i-1]->setParent(nodeArray[i]);
-        }
-
-        if (demangled_name) {
-            std::free(demangled_name);
-        }
-
-        if(unw_step(&cursor) < 0){
-         std::cout << "NOT SUCCESFUL!!!!!!!!!!!!!!!!!" << std::endl;
-        } else {
-         std::cout << "sucessful" << std::endl;
-        }
-
-    }
-
-    
-    
-    startNode = nodeArray[0];
-
-    writeToDot();
-
-    nodeArray.clear();
-
-    
-    
-}
-
-functionInformation symbolsParser(std::string functionSignature) {
-    functionInformation info;
-
-    std::size_t openingParenthesis = functionSignature.find('(');
-
-    if (openingParenthesis != std::string::npos) {
-        info.functionName = functionSignature.substr(0, openingParenthesis);
-        std::size_t closingParenthesis = functionSignature.find(')', openingParenthesis);
-
-        if (closingParenthesis != std::string::npos) {
-            std::string params = functionSignature.substr(openingParenthesis + 1, closingParenthesis - openingParenthesis - 1);
-            std::size_t startPos = 0;
-            while (startPos < params.length()) {
-                std::size_t commaPos = params.find(',', startPos);
-                if (commaPos == std::string::npos) {
-                    info.functionParameters.push_back(params.substr(startPos));
-                    break;
-                } else {
-                    info.functionParameters.push_back(params.substr(startPos, commaPos - startPos));
-                    startPos = commaPos + 1;
-                }
-            }
-        }
-    } else {
-        info.functionName = functionSignature;
-    }
-
-    return info;
-}
-
-ContextNode* createNode( 
-                    std::string functionName,
-                    std::vector<std::string> params,
-                    unw_word_t start_ip, 
-                    unw_word_t end_ip, 
-                    unw_word_t lsda, 
-                    unw_word_t handler, 
-                    unw_word_t global_pointer, 
-                    unw_word_t flags
-                    ){
-
-    ContextNode* node = new ContextNode(functionName, params, start_ip, end_ip, lsda, handler, global_pointer, flags);
-
-    return node;
-    
-}
-
-
-void writeToDot() {
-
-   ContextNode* node = startNode;
-
-   while(node->getParent() != nullptr) {
-      if(node == nullptr) {
-         return;
-      }
-   // Create the dot file entry for the current node
-      dotFileWrite << "node" << node->getStartIP() << 
-      " [label=\"" << node->functionName() <<
-      "\\n EndIP: 0x" << std::hex << node->getEndIP() << 
-      "\\n StartIP: 0x" << std::hex << node->getStartIP() <<
-      "\\n LSDA: 0x" << std::hex << node->getLsda() << 
-      "\\n Handler: 0x" << std::hex << node->getHandler() <<
-      "\\n Global Pointer: 0x" << std::hex << node->getGlobalPointer() <<
-      "\\n Flags:" << node->getFlags() <<
-      "\\n Call Count:" << node->getCallCount() << 
-      "\"];" << std::endl;
-
-      // for every parameter add another arrow going into the next function
-      if(node->getParameters().size() > 0) {
-      for(auto params : node->getParameters()) {
-         dotFileWrite << "node" << node->getParent()->getStartIP() << " -> node" << node->getStartIP() << " [label=\" "; 
-         dotFileWrite << params << ", ";
-         dotFileWrite << "\"];" << std::endl;
-      }
-      } else {
-      // for functions that dont have parameters
-         dotFileWrite << "node" << node->getParent()->getStartIP() << " -> node" << node->getStartIP() << std::endl;
-      }
-
-      node = node->getParent();
-   }
-
-}
-
 
 void TimeIncrement(Domain& domain)
 {  
@@ -439,9 +225,6 @@ void TimeIncrement(Domain& domain)
 
    ++domain.cycle() ;
 
-   std::cout << "Called time increment" << std::endl;
-   buildCCT(2);
-
 }
 
 /******************************************/
@@ -492,7 +275,7 @@ void CollectDomainNodesToElemNodes(Domain &domain,
 
 /******************************************/
 
-static inline
+// staticinline
 void InitStressTermsForElems(Domain &domain,
                              Real_t *sigxx, Real_t *sigyy, Real_t *sigzz,
                              Index_t numElem)
@@ -509,7 +292,7 @@ void InitStressTermsForElems(Domain &domain,
 
 /******************************************/
 
-static inline
+// staticinline
 void CalcElemShapeFunctionDerivatives( Real_t const x[],
                                        Real_t const y[],
                                        Real_t const z[],
@@ -600,7 +383,7 @@ void CalcElemShapeFunctionDerivatives( Real_t const x[],
 
 /******************************************/
 
-static inline
+// staticinline
 void SumElemFaceNormal(Real_t *normalX0, Real_t *normalY0, Real_t *normalZ0,
                        Real_t *normalX1, Real_t *normalY1, Real_t *normalZ1,
                        Real_t *normalX2, Real_t *normalY2, Real_t *normalZ2,
@@ -638,7 +421,7 @@ void SumElemFaceNormal(Real_t *normalX0, Real_t *normalY0, Real_t *normalZ0,
 
 /******************************************/
 
-static inline
+// staticinline
 void CalcElemNodeNormals(Real_t pfx[8],
                          Real_t pfy[8],
                          Real_t pfz[8],
@@ -652,52 +435,67 @@ void CalcElemNodeNormals(Real_t pfx[8],
       pfz[i] = Real_t(0.0);
    }
    /* evaluate face one: nodes 0, 1, 2, 3 */
+   trace_func_call("SumElemFaceNormal", 24, "Real_t *normalX0: &pfx[0]", "Real_t *normalY0: &pfy[0]", "Real_t *normalZ: &pfz[0]", "Real_t *normalX1: &pfx[1]", "Real_t *normalY1: &pfy[1]", "Real_t *normalZ1: &pfz[1]", "Real_t *normalX2: &pfx[2]", "Real_t *normalY2: &pfy[2]", "Real_t *normalZ2: &pfz[2]", "Real_t *normalX3: &pfx[3]", "Real_t *normalY3: &pfy[3]", "Real_t *normalZ: &pfz[3]", "Real_t x0: x[0]", "Real_t y0: y[0]", "Real_t z0: z[0]", "Real_t x1: x[1]", "Real_t y1: y[1]", "Real_t z1: z[1]", "Real_t x2: x[2]", "Real_t y2: y[2]", "Real_t z2: z[2]", "Real_t x3: x[3]", "Real_t y3: y[3]", "Real_t z3: z[3]");
    SumElemFaceNormal(&pfx[0], &pfy[0], &pfz[0],
                   &pfx[1], &pfy[1], &pfz[1],
                   &pfx[2], &pfy[2], &pfz[2],
                   &pfx[3], &pfy[3], &pfz[3],
                   x[0], y[0], z[0], x[1], y[1], z[1],
                   x[2], y[2], z[2], x[3], y[3], z[3]);
+   trace_func_call_end();
+
    /* evaluate face two: nodes 0, 4, 5, 1 */
+   trace_func_call("SumElemFaceNormal", 24, "Real_t *normalX0: &pfx[0]", "Real_t *normalY0: &pfy[0]", "Real_t *normalZ: &pfz[0]", "Real_t *normalX1: &pfx[4]", "Real_t *normalY1: &pfy[4]", "Real_t *normalZ1: &pfz[4]", "Real_t *normalX2: &pfx[5]", "Real_t *normalY2: &pfy[5]", "Real_t *normalZ2: &pfz[5]", "Real_t *normalX3: &pfx[1]", "Real_t *normalY3: &pfy[1]", "Real_t *normalZ: &pfz[1]", "Real_t x0: x[0]", "Real_t y0: y[0]", "Real_t z0: z[0]", "Real_t x1: x[4]", "Real_t y1: y[4]", "Real_t z1: z[4]", "Real_t x2: x[5]", "Real_t y2: y[5]", "Real_t z2: z[5]", "Real_t x3: x[1]", "Real_t y3: y[1]", "Real_t z3: z[1]");
    SumElemFaceNormal(&pfx[0], &pfy[0], &pfz[0],
                   &pfx[4], &pfy[4], &pfz[4],
                   &pfx[5], &pfy[5], &pfz[5],
                   &pfx[1], &pfy[1], &pfz[1],
                   x[0], y[0], z[0], x[4], y[4], z[4],
                   x[5], y[5], z[5], x[1], y[1], z[1]);
+   trace_func_call_end();
+
    /* evaluate face three: nodes 1, 5, 6, 2 */
+   trace_func_call("SumElemFaceNormal", 24, "Real_t *normalX0: &pfx[1]", "Real_t *normalY0: &pfy[1]", "Real_t *normalZ: &pfz[1]", "Real_t *normalX1: &pfx[5]", "Real_t *normalY1: &pfy[5]", "Real_t *normalZ1: &pfz[5]", "Real_t *normalX2: &pfx[6]", "Real_t *normalY2: &pfy[6]", "Real_t *normalZ2: &pfz[6]", "Real_t *normalX3: &pfx[2]", "Real_t *normalY3: &pfy[2]", "Real_t *normalZ: &pfz[2]", "Real_t x0: x[1]", "Real_t y0: y[1]", "Real_t z0: z[1]", "Real_t x1: x[5]", "Real_t y1: y[5]", "Real_t z1: z[5]", "Real_t x2: x[6]", "Real_t y2: y[6]", "Real_t z2: z[6]", "Real_t x3: x[2]", "Real_t y3: y[2]", "Real_t z3: z[2]");
    SumElemFaceNormal(&pfx[1], &pfy[1], &pfz[1],
                   &pfx[5], &pfy[5], &pfz[5],
                   &pfx[6], &pfy[6], &pfz[6],
                   &pfx[2], &pfy[2], &pfz[2],
                   x[1], y[1], z[1], x[5], y[5], z[5],
                   x[6], y[6], z[6], x[2], y[2], z[2]);
+   trace_func_call_end();
+
    /* evaluate face four: nodes 2, 6, 7, 3 */
+   trace_func_call("SumElemFaceNormal", 24, "Real_t *normalX0: &pfx[2]", "Real_t *normalY0: &pfy[2]", "Real_t *normalZ: &pfz[2]", "Real_t *normalX1: &pfx[6]", "Real_t *normalY1: &pfy[6]", "Real_t *normalZ1: &pfz[6]", "Real_t *normalX2: &pfx[7]", "Real_t *normalY2: &pfy[7]", "Real_t *normalZ2: &pfz[7]", "Real_t *normalX3: &pfx[3]", "Real_t *normalY3: &pfy[3]", "Real_t *normalZ: &pfz[3]", "Real_t x0: x[2]", "Real_t y0: y[2]", "Real_t z0: z[2]", "Real_t x1: x[6]", "Real_t y1: y[6]", "Real_t z1: z[6]", "Real_t x2: x[7]", "Real_t y2: y[7]", "Real_t z2: z[7]", "Real_t x3: x[3]", "Real_t y3: y[3]", "Real_t z3: z[3]");
    SumElemFaceNormal(&pfx[2], &pfy[2], &pfz[2],
                   &pfx[6], &pfy[6], &pfz[6],
                   &pfx[7], &pfy[7], &pfz[7],
                   &pfx[3], &pfy[3], &pfz[3],
                   x[2], y[2], z[2], x[6], y[6], z[6],
                   x[7], y[7], z[7], x[3], y[3], z[3]);
+   trace_func_call_end();
    /* evaluate face five: nodes 3, 7, 4, 0 */
+   trace_func_call("SumElemFaceNormal", 24, "Real_t *normalX0: &pfx[3]", "Real_t *normalY0: &pfy[3]", "Real_t *normalZ: &pfz[3]", "Real_t *normalX1: &pfx[7]", "Real_t *normalY1: &pfy[7]", "Real_t *normalZ1: &pfz[7]", "Real_t *normalX2: &pfx[4]", "Real_t *normalY2: &pfy[4]", "Real_t *normalZ2: &pfz[4]", "Real_t *normalX3: &pfx[0]", "Real_t *normalY3: &pfy[0]", "Real_t *normalZ: &pfz[0]", "Real_t x0: x[3]", "Real_t y0: y[3]", "Real_t z0: z[3]", "Real_t x1: x[7]", "Real_t y1: y[7]", "Real_t z1: z[7]", "Real_t x2: x[4]", "Real_t y2: y[4]", "Real_t z2: z[4]", "Real_t x3: x[0]", "Real_t y3: y[0]", "Real_t z3: z[0]");
    SumElemFaceNormal(&pfx[3], &pfy[3], &pfz[3],
                   &pfx[7], &pfy[7], &pfz[7],
                   &pfx[4], &pfy[4], &pfz[4],
                   &pfx[0], &pfy[0], &pfz[0],
                   x[3], y[3], z[3], x[7], y[7], z[7],
                   x[4], y[4], z[4], x[0], y[0], z[0]);
+   trace_func_call_end();
    /* evaluate face six: nodes 4, 7, 6, 5 */
+   trace_func_call("SumElemFaceNormal", 24, "Real_t *normalX0: &pfx[4]", "Real_t *normalY0: &pfy[4]", "Real_t *normalZ: &pfz[4]", "Real_t *normalX1: &pfx[7]", "Real_t *normalY1: &pfy[7]", "Real_t *normalZ1: &pfz[7]", "Real_t *normalX2: &pfx[6]", "Real_t *normalY2: &pfy[6]", "Real_t *normalZ2: &pfz[6]", "Real_t *normalX3: &pfx[5]", "Real_t *normalY3: &pfy[5]", "Real_t *normalZ: &pfz[5]", "Real_t x0: x[4]", "Real_t y0: y[4]", "Real_t z0: z[4]", "Real_t x1: x[7]", "Real_t y1: y[7]", "Real_t z1: z[7]", "Real_t x2: x[6]", "Real_t y2: y[6]", "Real_t z2: z[6]", "Real_t x3: x[5]", "Real_t y3: y[5]", "Real_t z3: z[5]");
    SumElemFaceNormal(&pfx[4], &pfy[4], &pfz[4],
                   &pfx[7], &pfy[7], &pfz[7],
                   &pfx[6], &pfy[6], &pfz[6],
                   &pfx[5], &pfy[5], &pfz[5],
                   x[4], y[4], z[4], x[7], y[7], z[7],
                   x[6], y[6], z[6], x[5], y[5], z[5]);
+   trace_func_call_end();
 }
 
 /******************************************/
 
-static inline
+// staticinline
 void SumElemStressesToNodeForces( const Real_t B[][8],
                                   const Real_t stress_xx,
                                   const Real_t stress_yy,
@@ -713,7 +511,7 @@ void SumElemStressesToNodeForces( const Real_t B[][8],
 
 /******************************************/
 
-static inline
+// staticinline
 void IntegrateStressForElems( Domain &domain,
                               Real_t *sigxx, Real_t *sigyy, Real_t *sigzz,
                               Real_t *determ, Index_t numElem, Index_t numNode)
@@ -734,9 +532,17 @@ void IntegrateStressForElems( Domain &domain,
 
 
   if (numthreads > 1) {
+      trace_func_call("Allocate", 1, "size_t size: numElem8"); 
      fx_elem = Allocate<Real_t>(numElem8) ;
+      trace_func_call_end();
+
+     trace_func_call("Allocate", 1, "size_t size: numElem8"); 
      fy_elem = Allocate<Real_t>(numElem8) ;
+      trace_func_call_end();
+
+     trace_func_call("Allocate", 1, "size_t size: numElem8"); 
      fz_elem = Allocate<Real_t>(numElem8) ;
+     trace_func_call_end();
   }
   // loop over all elements
 
@@ -750,26 +556,36 @@ void IntegrateStressForElems( Domain &domain,
     Real_t z_local[8] ;
 
     // get nodal coordinates from global arrays and copy into local arrays.
+    trace_func_call("CollectDomainNodesToElemNodes", 5, "Domain &domain: domain", "const Index_t *elemToNode: elemToNode", "Real_t *elem: x_local", "Real_t *elemY: y_local", "Real_t *elemZ: z_local"); 
     CollectDomainNodesToElemNodes(domain, elemToNode, x_local, y_local, z_local);
+   trace_func_call_end();
 
     // Volume calculation involves extra work for numerical consistency
+    trace_func_call("CollectDomainNodesToElemNodes", 5, "const Real_t *x: x_local", "const Real_t *y: y_local", "const Real_t *z: z_local", "Real_t (*b)[8]: B", "Real_t *volume: &determ[k]"); 
     CalcElemShapeFunctionDerivatives(x_local, y_local, z_local,
                                          B, &determ[k]);
+   trace_func_call_end();
 
+   trace_func_call("CalcElemNodeNormals", 6, "Real_t *pfx: B[0]", "Real_t *pfy: B[1]", "Real_t *pfz: B[2]", "const Real_t *x: x_local", "const Real_t *y: y_local", "const Real_t *z: z_local");
     CalcElemNodeNormals( B[0] , B[1], B[2],
                           x_local, y_local, z_local );
+   trace_func_call_end();
 
     if (numthreads > 1) {
        // Eliminate thread writing conflicts at the nodes by giving
        // each element its own copy to write to
+       trace_func_call("SumElemStressesToNodeForces", 7, "const Real_t (*B)[8]: B", "Real_t stress_xx: sigxx[k]", "Real_t stress_y: sigyy[k]", "Real_t stress_zz: sigzz[k]", "Real_t *fx: &fx_elem[k*8]", "Real_t *fy: &fy_elem[k*8]", "Real_t *fz: &fz_elem[k*8]");
        SumElemStressesToNodeForces( B, sigxx[k], sigyy[k], sigzz[k],
                                     &fx_elem[k*8],
                                     &fy_elem[k*8],
                                     &fz_elem[k*8] ) ;
+         trace_func_call_end();
     }
     else {
+      trace_func_call("SumElemStressesToNodeForces", 7, "const Real_t (*B)[8]: B", "Real_t stress_xx: sigxx[k]", "Real_t stress_y: sigyy[k]", "Real_t stress_zz: sigzz[k]", "Real_t *fx: fx_local", "Real_t *fy: fy_local", "Real_t *fz: fz_local");
        SumElemStressesToNodeForces( B, sigxx[k], sigyy[k], sigzz[k],
                                     fx_local, fy_local, fz_local ) ;
+      trace_func_call_end();
 
        // copy nodal force contributions to global force arrray.
        for( Index_t lnode=0 ; lnode<8 ; ++lnode ) {
@@ -802,15 +618,23 @@ void IntegrateStressForElems( Domain &domain,
         domain.fy(gnode) = fy_tmp ;
         domain.fz(gnode) = fz_tmp ;
      }
+     trace_func_call("Release", 1, "Real_t **ptr: &fz_elem"); 
      Release(&fz_elem) ;
+     trace_func_call_end();
+
+     trace_func_call("Release", 1, "Real_t **ptr: &fy_elem"); 
      Release(&fy_elem) ;
+     trace_func_call_end();
+
+     trace_func_call("Release", 1, "Real_t **ptr: &fx_elem"); 
      Release(&fx_elem) ;
+     trace_func_call_end();
   }
 }
 
 /******************************************/
 
-static inline
+// staticinline
 void VoluDer(const Real_t x0, const Real_t x1, const Real_t x2,
              const Real_t x3, const Real_t x4, const Real_t x5,
              const Real_t y0, const Real_t y1, const Real_t y2,
@@ -842,7 +666,7 @@ void VoluDer(const Real_t x0, const Real_t x1, const Real_t x2,
 
 /******************************************/
 
-static inline
+// staticinline
 void CalcElemVolumeDerivative(Real_t dvdx[8],
                               Real_t dvdy[8],
                               Real_t dvdz[8],
@@ -850,43 +674,100 @@ void CalcElemVolumeDerivative(Real_t dvdx[8],
                               const Real_t y[8],
                               const Real_t z[8])
 {
-   VoluDer(x[1], x[2], x[3], x[4], x[5], x[7],
-           y[1], y[2], y[3], y[4], y[5], y[7],
-           z[1], z[2], z[3], z[4], z[5], z[7],
-           &dvdx[0], &dvdy[0], &dvdz[0]);
-   VoluDer(x[0], x[1], x[2], x[7], x[4], x[6],
-           y[0], y[1], y[2], y[7], y[4], y[6],
-           z[0], z[1], z[2], z[7], z[4], z[6],
-           &dvdx[3], &dvdy[3], &dvdz[3]);
-   VoluDer(x[3], x[0], x[1], x[6], x[7], x[5],
-           y[3], y[0], y[1], y[6], y[7], y[5],
-           z[3], z[0], z[1], z[6], z[7], z[5],
-           &dvdx[2], &dvdy[2], &dvdz[2]);
-   VoluDer(x[2], x[3], x[0], x[5], x[6], x[4],
-           y[2], y[3], y[0], y[5], y[6], y[4],
-           z[2], z[3], z[0], z[5], z[6], z[4],
-           &dvdx[1], &dvdy[1], &dvdz[1]);
-   VoluDer(x[7], x[6], x[5], x[0], x[3], x[1],
-           y[7], y[6], y[5], y[0], y[3], y[1],
-           z[7], z[6], z[5], z[0], z[3], z[1],
-           &dvdx[4], &dvdy[4], &dvdz[4]);
-   VoluDer(x[4], x[7], x[6], x[1], x[0], x[2],
-           y[4], y[7], y[6], y[1], y[0], y[2],
-           z[4], z[7], z[6], z[1], z[0], z[2],
-           &dvdx[5], &dvdy[5], &dvdz[5]);
-   VoluDer(x[5], x[4], x[7], x[2], x[1], x[3],
-           y[5], y[4], y[7], y[2], y[1], y[3],
-           z[5], z[4], z[7], z[2], z[1], z[3],
-           &dvdx[6], &dvdy[6], &dvdz[6]);
-   VoluDer(x[6], x[5], x[4], x[3], x[2], x[0],
-           y[6], y[5], y[4], y[3], y[2], y[0],
-           z[6], z[5], z[4], z[3], z[2], z[0],
-           &dvdx[7], &dvdy[7], &dvdz[7]);
+  trace_func_call("VoluDer", 18,
+               "Real_t x0: x[1]", "Real_t x1: x[2]", "Real_t x2: x[3]", "Real_t x3: x[4]", "Real_t x4: x[5]", "Real_t x5: x[7]",
+               "Real_t y0: y[1]", "Real_t y1: y[2]", "Real_t y2: y[3]", "Real_t y3: y[4]", "Real_t y4: y[5]", "Real_t y5: y[7]",
+               "Real_t z0: z[1]", "Real_t z1: z[2]", "Real_t z2: z[3]", "Real_t z3: z[4]", "Real_t z4: z[5]", "Real_t z5: z[7]",
+               "Real_t *dvd: &dvdx[0]", "Real_t *dvdy: &dvdy[0]", "Real_t *dvdz: &dvdz[0]");
+VoluDer(x[1], x[2], x[3], x[4], x[5], x[7],
+        y[1], y[2], y[3], y[4], y[5], y[7],
+        z[1], z[2], z[3], z[4], z[5], z[7],
+        &dvdx[0], &dvdy[0], &dvdz[0]);
+trace_func_call_end();
+
+
+   trace_func_call("VoluDer", 18,
+               "Real_t x0: x[0]", "Real_t x1: x[1]", "Real_t x2: x[2]", "Real_t x3: x[7]", "Real_t x4: x[4]", "Real_t x5: x[6]",
+               "Real_t y0: y[0]", "Real_t y1: y[1]", "Real_t y2: y[2]", "Real_t y3: y[7]", "Real_t y4: y[4]", "Real_t y5: y[6]",
+               "Real_t z0: z[0]", "Real_t z1: z[1]", "Real_t z2: z[2]", "Real_t z3: z[7]", "Real_t z4: z[4]", "Real_t z5: z[6]",
+               "Real_t *dvd: &dvdx[3]", "Real_t *dvdy: &dvdy[3]", "Real_t *dvdz: &dvdz[3]");
+VoluDer(x[0], x[1], x[2], x[7], x[4], x[6],
+        y[0], y[1], y[2], y[7], y[4], y[6],
+        z[0], z[1], z[2], z[7], z[4], z[6],
+        &dvdx[3], &dvdy[3], &dvdz[3]);
+trace_func_call_end();
+
+trace_func_call("VoluDer", 18,
+               "Real_t x0: x[3]", "Real_t x1: x[0]", "Real_t x2: x[1]", "Real_t x3: x[6]", "Real_t x4: x[7]", "Real_t x5: x[5]",
+               "Real_t y0: y[3]", "Real_t y1: y[0]", "Real_t y2: y[1]", "Real_t y3: y[6]", "Real_t y4: y[7]", "Real_t y5: y[5]",
+               "Real_t z0: z[3]", "Real_t z1: z[0]", "Real_t z2: z[1]", "Real_t z3: z[6]", "Real_t z4: z[7]", "Real_t z5: z[5]",
+               "Real_t *dvd: &dvdx[2]", "Real_t *dvdy: &dvdy[2]", "Real_t *dvdz: &dvdz[2]");
+VoluDer(x[3], x[0], x[1], x[6], x[7], x[5],
+        y[3], y[0], y[1], y[6], y[7], y[5],
+        z[3], z[0], z[1], z[6], z[7], z[5],
+        &dvdx[2], &dvdy[2], &dvdz[2]);
+trace_func_call_end();
+
+trace_func_call("VoluDer", 18,
+               "Real_t x0: x[2]", "Real_t x1: x[3]", "Real_t x2: x[0]", "Real_t x3: x[5]", "Real_t x4: x[6]", "Real_t x5: x[4]",
+               "Real_t y0: y[2]", "Real_t y1: y[3]", "Real_t y2: y[0]", "Real_t y3: y[5]", "Real_t y4: y[6]", "Real_t y5: y[4]",
+               "Real_t z0: z[2]", "Real_t z1: z[3]", "Real_t z2: z[0]", "Real_t z3: z[5]", "Real_t z4: z[6]", "Real_t z5: z[4]",
+               "Real_t *dvd: &dvdx[1]", "Real_t *dvdy: &dvdy[1]", "Real_t *dvdz: &dvdz[1]");
+VoluDer(x[2], x[3], x[0], x[5], x[6], x[4],
+        y[2], y[3], y[0], y[5], y[6], y[4],
+        z[2], z[3], z[0], z[5], z[6], z[4],
+        &dvdx[1], &dvdy[1], &dvdz[1]);
+trace_func_call_end();
+
+trace_func_call("VoluDer", 18,
+               "Real_t x0: x[7]", "Real_t x1: x[6]", "Real_t x2: x[5]", "Real_t x3: x[0]", "Real_t x4: x[3]", "Real_t x5: x[1]",
+               "Real_t y0: y[7]", "Real_t y1: y[6]", "Real_t y2: y[5]", "Real_t y3: y[0]", "Real_t y4: y[3]", "Real_t y5: y[1]",
+               "Real_t z0: z[7]", "Real_t z1: z[6]", "Real_t z2: z[5]", "Real_t z3: z[0]", "Real_t z4: z[3]", "Real_t z5: z[1]",
+               "Real_t *dvd: &dvdx[4]", "Real_t *dvdy: &dvdy[4]", "Real_t *dvdz: &dvdz[4]");
+VoluDer(x[7], x[6], x[5], x[0], x[3], x[1],
+        y[7], y[6], y[5], y[0], y[3], y[1],
+        z[7], z[6], z[5], z[0], z[3], z[1],
+        &dvdx[4], &dvdy[4], &dvdz[4]);
+trace_func_call_end();
+
+trace_func_call("VoluDer", 18,
+               "Real_t x0: x[4]", "Real_t x1: x[7]", "Real_t x2: x[6]", "Real_t x3: x[1]", "Real_t x4: x[0]", "Real_t x5: x[2]",
+               "Real_t y0: y[4]", "Real_t y1: y[7]", "Real_t y2: y[6]", "Real_t y3: y[1]", "Real_t y4: y[0]", "Real_t y5: y[2]",
+               "Real_t z0: z[4]", "Real_t z1: z[7]", "Real_t z2: z[6]", "Real_t z3: z[1]", "Real_t z4: z[0]", "Real_t z5: z[2]",
+               "Real_t *dvd: &dvdx[5]", "Real_t *dvdy: &dvdy[5]", "Real_t *dvdz: &dvdz[5]");
+VoluDer(x[4], x[7], x[6], x[1], x[0], x[2],
+        y[4], y[7], y[6], y[1], y[0], y[2],
+        z[4], z[7], z[6], z[1], z[0], z[2],
+        &dvdx[5], &dvdy[5], &dvdz[5]);
+trace_func_call_end();
+
+trace_func_call("VoluDer", 18,
+               "Real_t x0: x[5]", "Real_t x1: x[4]", "Real_t x2: x[7]", "Real_t x3: x[2]", "Real_t x4: x[1]", "Real_t x5: x[3]",
+               "Real_t y0: y[5]", "Real_t y1: y[4]", "Real_t y2: y[7]", "Real_t y3: y[2]", "Real_t y4: y[1]", "Real_t y5: y[3]",
+               "Real_t z0: z[5]", "Real_t z1: z[4]", "Real_t z2: z[7]", "Real_t z3: z[2]", "Real_t z4: z[1]", "Real_t z5: z[3]",
+               "Real_t *dvd: &dvdx[6]", "Real_t *dvdy: &dvdy[6]", "Real_t *dvdz: &dvdz[6]");
+VoluDer(x[5], x[4], x[7], x[2], x[1], x[3],
+        y[5], y[4], y[7], y[2], y[1], y[3],
+        z[5], z[4], z[7], z[2], z[1], z[3],
+        &dvdx[6], &dvdy[6], &dvdz[6]);
+trace_func_call_end();
+
+trace_func_call("VoluDer", 18,
+               "Real_t x0: x[6]", "Real_t x1: x[5]", "Real_t x2: x[4]", "Real_t x3: x[3]", "Real_t x4: x[2]", "Real_t x5: x[0]",
+               "Real_t y0: y[6]", "Real_t y1: y[5]", "Real_t y2: y[4]", "Real_t y3: y[3]", "Real_t y4: y[2]", "Real_t y5: y[0]",
+               "Real_t z0: z[6]", "Real_t z1: z[5]", "Real_t z2: z[4]", "Real_t z3: z[3]", "Real_t z4: z[2]", "Real_t z5: z[0]",
+               "Real_t *dvd: &dvdx[7]", "Real_t *dvdy: &dvdy[7]", "Real_t *dvdz: &dvdz[7]");
+VoluDer(x[6], x[5], x[4], x[3], x[2], x[0],
+        y[6], y[5], y[4], y[3], y[2], y[0],
+        z[6], z[5], z[4], z[3], z[2], z[0],
+        &dvdx[7], &dvdy[7], &dvdz[7]);
+trace_func_call_end();
+
 }
 
 /******************************************/
 
-static inline
+// staticinline
 void CalcElemFBHourglassForce(Real_t *xd, Real_t *yd, Real_t *zd,  Real_t hourgam[][4],
                               Real_t coefficient,
                               Real_t *hgfx, Real_t *hgfy, Real_t *hgfz )
@@ -929,7 +810,7 @@ void CalcElemFBHourglassForce(Real_t *xd, Real_t *yd, Real_t *zd,  Real_t hourga
 
 /******************************************/
 
-static inline
+// staticinline
 void CalcFBHourglassForceForElems( Domain &domain,
                                    Real_t *determ,
                                    Real_t *x8n, Real_t *y8n, Real_t *z8n,
@@ -957,9 +838,17 @@ void CalcFBHourglassForceForElems( Domain &domain,
    Real_t *fz_elem; 
 
    if(numthreads > 1) {
+      trace_func_call("Allocate", 1, "size_t size: numElem8"); 
       fx_elem = Allocate<Real_t>(numElem8) ;
+      trace_func_call_end();
+
+      trace_func_call("Allocate", 1, "size_t size: numElem8"); 
       fy_elem = Allocate<Real_t>(numElem8) ;
+      trace_func_call_end();
+
+      trace_func_call("Allocate", 1, "size_t size: numElem8"); 
       fz_elem = Allocate<Real_t>(numElem8) ;
+      trace_func_call_end();
    }
 
    Real_t  gamma[4][8];
@@ -1114,9 +1003,13 @@ void CalcFBHourglassForceForElems( Domain &domain,
 
       coefficient = - hourg * Real_t(0.01) * ss1 * mass1 / volume13;
 
+      trace_func_call("CalcElemFBHourglassForce", 8,
+               "Real_t *xd: xd1", "Real_t *yd: yd1", "Real_t *zd: zd1", "Real_t (*hourgam)[4]: hourgam",
+               "Real_t coefficient: coefficient", "Real_t *hgfx: hgfx", "Real_t *hgfy: hgfy", "Real_t *hgfz: hgfz");   
       CalcElemFBHourglassForce(xd1,yd1,zd1,
                       hourgam,
                       coefficient, hgfx, hgfy, hgfz);
+      trace_func_call_end();
 
       // With the threaded version, we write into local arrays per elem
       // so we don't have to worry about race conditions
@@ -1206,26 +1099,54 @@ void CalcFBHourglassForceForElems( Domain &domain,
          domain.fy(gnode) += fy_tmp ;
          domain.fz(gnode) += fz_tmp ;
       }
+      trace_func_call("Release", 1, "Real_t **ptr: &fz_elem"); 
       Release(&fz_elem) ;
+      trace_func_call_end();
+
+
+      trace_func_call("Release", 1, "Real_t **ptr: &fy_elem"); 
       Release(&fy_elem) ;
+      trace_func_call_end();
+
+      trace_func_call("Release", 1, "Real_t **ptr: &fx_elem"); 
       Release(&fx_elem) ;
+      trace_func_call_end();
    }
 }
 
 /******************************************/
 
-static inline
+// staticinline
 void CalcHourglassControlForElems(Domain& domain,
                                   Real_t determ[], Real_t hgcoef)
 {
+
    Index_t numElem = domain.numElem() ;
    Index_t numElem8 = numElem * 8 ;
+
+   trace_func_call("Allocate", 1, "size_t size: numElem8");
    Real_t *dvdx = Allocate<Real_t>(numElem8) ;
+   trace_func_call_end();
+
+   trace_func_call("Allocate", 1, "size_t size: numElem8");
    Real_t *dvdy = Allocate<Real_t>(numElem8) ;
+   trace_func_call_end();
+
+   trace_func_call("Allocate", 1, "size_t size: numElem8");
    Real_t *dvdz = Allocate<Real_t>(numElem8) ;
+   trace_func_call_end();
+
+   trace_func_call("Allocate", 1, "size_t size: numElem8");
    Real_t *x8n  = Allocate<Real_t>(numElem8) ;
+   trace_func_call_end();
+
+   trace_func_call("Allocate", 1, "size_t size: numElem8");
    Real_t *y8n  = Allocate<Real_t>(numElem8) ;
+   trace_func_call_end();
+
+   trace_func_call("Allocate", 1, "size_t size: numElem8");
    Real_t *z8n  = Allocate<Real_t>(numElem8) ;
+   trace_func_call_end();
 
    /* start loop over elements */
 #pragma omp parallel for firstprivate(numElem)
@@ -1234,9 +1155,14 @@ void CalcHourglassControlForElems(Domain& domain,
       Real_t pfx[8], pfy[8], pfz[8] ;
 
       Index_t* elemToNode = domain.nodelist(i);
+      trace_func_call("CollectDomainNodesToElemNodes", 5, "Domain &domain: domain", "const Index_t *elemToNode: elemToNode", "Real_t *elemX: x1", "Real_t *elemY: y1", "Real_t *elemZ: z1");
       CollectDomainNodesToElemNodes(domain, elemToNode, x1, y1, z1);
+      trace_func_call_end();
 
+      trace_func_call("CalcElemVolumeDerivative", 6, "Real_t *dvdx: pfx", "Real_t *dvdy: pfy", "Real_t *dvdz: pfz", "const Real_t *x: x1", "const Real_t *y: y1", "const Real_t *z: z1");
       CalcElemVolumeDerivative(pfx, pfy, pfz, x1, y1, z1);
+      trace_func_call_end();
+
 
       /* load into temporary storage for FB Hour Glass control */
       for(Index_t ii=0;ii<8;++ii){
@@ -1263,42 +1189,76 @@ void CalcHourglassControlForElems(Domain& domain,
    }
 
    if ( hgcoef > Real_t(0.) ) {
+      trace_func_call("CalcFBHourglassForceForElems", 11, "Domain &domain: domain", "Real_t *determ: determ", "Real_t *x8n: x8n", "Real_t *y8n: y8n", "Real_t *z8n: z8n", "Real_t *dvdx: dvdx", "Real_t *dvdy: dvdy", "Real_t *dvdz: dvdz", "Real_t hourg: hgcoef", "Index_t numElem: numElem", "Index_t numNode: domain.numNode()");
       CalcFBHourglassForceForElems( domain,
                                     determ, x8n, y8n, z8n, dvdx, dvdy, dvdz,
                                     hgcoef, numElem, domain.numNode()) ;
+      trace_func_call_end();
    }
-
+   trace_func_call("Release", 1, "Real_t **ptr: &z8n");
    Release(&z8n) ;
+   trace_func_call_end();
+
+   trace_func_call("Release", 1, "Real_t **ptr: &y8n");
    Release(&y8n) ;
+   trace_func_call_end();
+
+   trace_func_call("Release", 1, "Real_t **ptr: &x8n");
    Release(&x8n) ;
+   trace_func_call_end();
+
+   trace_func_call("Release", 1, "Real_t **ptr: &dvdz");
    Release(&dvdz) ;
+   trace_func_call_end();
+
+   trace_func_call("Release", 1, "Real_t **ptr: &dvdy");
    Release(&dvdy) ;
+   trace_func_call_end();
+
+   trace_func_call("Release", 1, "Real_t **ptr: &dvdx");
    Release(&dvdx) ;
+   trace_func_call_end();
 
    return ;
 }
 
 /******************************************/
 
-static inline
+// staticinline
 void CalcVolumeForceForElems(Domain& domain)
 {
    Index_t numElem = domain.numElem() ;
    if (numElem != 0) {
       Real_t  hgcoef = domain.hgcoef() ;
+
+      trace_func_call("Allocate", 1, "size_t size: numElem"); 
       Real_t *sigxx  = Allocate<Real_t>(numElem) ;
+      trace_func_call_end();
+
+      trace_func_call("Allocate", 1, "size_t size: numElem"); 
       Real_t *sigyy  = Allocate<Real_t>(numElem) ;
+      trace_func_call_end();
+
+      trace_func_call("Allocate", 1, "size_t size: numElem"); 
       Real_t *sigzz  = Allocate<Real_t>(numElem) ;
+      trace_func_call_end();
+
+      trace_func_call("Allocate", 1, "size_t size: numElem"); 
       Real_t *determ = Allocate<Real_t>(numElem) ;
+      trace_func_call_end();
 
       /* Sum contributions to total stress tensor */
+      trace_func_call("InitStressTermsForElems", 5, "Domain &domain: domain", "Real_t *sigxx: sigxx", "Real_t *sigyy: sigyy", "Real_t *sigzz: sigzz", "Index_t numElem: numElem"); 
       InitStressTermsForElems(domain, sigxx, sigyy, sigzz, numElem);
+      trace_func_call_end();
 
       // call elemlib stress integration loop to produce nodal forces from
       // material stresses.
+      trace_func_call("IntegrateStressForElems", 7, "Domain &domain: domain", "Real_t *sigxx: sigxx", "Real_t *sigyy: sigyy", "Real_t *sigzz: sigzz", "Real_t *determ: determ", "Index_t numElem: numElem", "Index_t numNode: domain.numNode()");
       IntegrateStressForElems( domain,
                                sigxx, sigyy, sigzz, determ, numElem,
                                domain.numNode()) ;
+      trace_func_call_end();
 
       // check for negative element volume
 #pragma omp parallel for firstprivate(numElem)
@@ -1311,19 +1271,31 @@ void CalcVolumeForceForElems(Domain& domain)
 #endif
          }
       }
-
+      trace_func_call("CalcHourglassControlForElems", 3, "Domain &domain: domain", "Real_t *determ: determ", "Real_t hgcoef, hgcoef"); 
       CalcHourglassControlForElems(domain, determ, hgcoef) ;
+      trace_func_call_end();
 
+      trace_func_call("Release", 1, "Real_t **ptr: &determ"); 
       Release(&determ) ;
+      trace_func_call_end();
+
+      trace_func_call("Release", 1, "Real_t **ptr: &sigzz"); 
       Release(&sigzz) ;
+      trace_func_call_end();
+
+      trace_func_call("Release", 1, "Real_t **ptr: &sigyy"); 
       Release(&sigyy) ;
+      trace_func_call_end();
+
+      trace_func_call("Release", 1, "Real_t **ptr: &sigxx"); 
       Release(&sigxx) ;
+      trace_func_call_end();
    }
 }
 
 /******************************************/
-
-static inline void CalcForceForNodes(Domain& domain)
+// staticinline
+void CalcForceForNodes(Domain& domain)
 {
   Index_t numNode = domain.numNode() ;
 
@@ -1341,7 +1313,9 @@ static inline void CalcForceForNodes(Domain& domain)
   }
 
   /* Calcforce calls partial, force, hourq */
+   trace_func_call("CalcVolumeForceForElems", 1, "Domain &domain: domain"); 
   CalcVolumeForceForElems(domain) ;
+  trace_func_call_end();
 
 #if USE_MPI  
   Domain_member fieldData[3] ;
@@ -1358,7 +1332,7 @@ static inline void CalcForceForNodes(Domain& domain)
 
 /******************************************/
 
-static inline
+// staticinline
 void CalcAccelerationForNodes(Domain &domain, Index_t numNode)
 {
    
@@ -1372,7 +1346,7 @@ void CalcAccelerationForNodes(Domain &domain, Index_t numNode)
 
 /******************************************/
 
-static inline
+// staticinline
 void ApplyAccelerationBoundaryConditionsForNodes(Domain& domain)
 {
    Index_t size = domain.sizeX();
@@ -1402,7 +1376,7 @@ void ApplyAccelerationBoundaryConditionsForNodes(Domain& domain)
 
 /******************************************/
 
-static inline
+// staticinline
 void CalcVelocityForNodes(Domain &domain, const Real_t dt, const Real_t u_cut,
                           Index_t numNode)
 {
@@ -1413,22 +1387,32 @@ void CalcVelocityForNodes(Domain &domain, const Real_t dt, const Real_t u_cut,
      Real_t xdtmp, ydtmp, zdtmp ;
 
      xdtmp = domain.xd(i) + domain.xdd(i) * dt ;
+
+     trace_func_call("FABS", 1, "real8 arg: xdtmp"); 
      if( FABS(xdtmp) < u_cut ) xdtmp = Real_t(0.0);
+     trace_func_call_end();
      domain.xd(i) = xdtmp ;
 
      ydtmp = domain.yd(i) + domain.ydd(i) * dt ;
+
+     trace_func_call("FABS", 1, "real8 arg: ydtmp"); 
      if( FABS(ydtmp) < u_cut ) ydtmp = Real_t(0.0);
+     trace_func_call_end();
      domain.yd(i) = ydtmp ;
+     
 
      zdtmp = domain.zd(i) + domain.zdd(i) * dt ;
+
+     trace_func_call("FABS", 1, "real8 arg: zdtmp"); 
      if( FABS(zdtmp) < u_cut ) zdtmp = Real_t(0.0);
+     trace_func_call_end();
      domain.zd(i) = zdtmp ;
    }
 }
 
 /******************************************/
 
-static inline
+// staticinline
 void CalcPositionForNodes(Domain &domain, const Real_t dt, Index_t numNode)
 {
 #pragma omp parallel for firstprivate(numNode)
@@ -1442,7 +1426,7 @@ void CalcPositionForNodes(Domain &domain, const Real_t dt, Index_t numNode)
 
 /******************************************/
 
-static inline
+// staticinline
 void LagrangeNodal(Domain& domain)
 {
 #ifdef SEDOV_SYNC_POS_VEL_EARLY
@@ -1450,11 +1434,14 @@ void LagrangeNodal(Domain& domain)
 #endif
 
    const Real_t delt = domain.deltatime() ;
+
    Real_t u_cut = domain.u_cut() ;
 
   /* time of boundary condition evaluation is beginning of step for force and
    * acceleration boundary conditions. */
+  trace_func_call("CalcForceForNodes", 1, "Domain &domain: domain"); 
   CalcForceForNodes(domain);
+  trace_func_call_end();
 
 #if USE_MPI  
 #ifdef SEDOV_SYNC_POS_VEL_EARLY
@@ -1463,14 +1450,24 @@ void LagrangeNodal(Domain& domain)
             false, false) ;
 #endif
 #endif
-   
+
+   trace_func_call("CalcAccelerationForNodes", 2, "Domain &domain: domain", "Index_t& numElem: domain.numNode()"); 
    CalcAccelerationForNodes(domain, domain.numNode());
+   trace_func_call_end();
    
+   trace_func_call("ApplyAccelerationBoundaryConditionsForNodes", 1, "Domain &domain: domain"); 
    ApplyAccelerationBoundaryConditionsForNodes(domain);
+   trace_func_call_end();
 
+   trace_func_call("CalcVelocityForNodes", 4, "Domain &domain: domain", "Real_t dt: delt", "Real_t u_cut: u_cut", "Index_t numNode: domain.numNode()"); 
    CalcVelocityForNodes( domain, delt, u_cut, domain.numNode()) ;
+   trace_func_call_end();
 
+   trace_func_call("CalcPositionForNodes", 3, "Domain &domain: domain", "Real_t dt: delt", "Index_t numNode: domain.numNode()"); 
    CalcPositionForNodes( domain, delt, domain.numNode() );
+   trace_func_call_end();
+
+
 #if USE_MPI
 #ifdef SEDOV_SYNC_POS_VEL_EARLY
   fieldData[0] = &Domain::x ;
@@ -1492,7 +1489,7 @@ void LagrangeNodal(Domain& domain)
 
 /******************************************/
 
-static inline
+// staticinline
 Real_t CalcElemVolume( const Real_t x0, const Real_t x1,
                const Real_t x2, const Real_t x3,
                const Real_t x4, const Real_t x5,
@@ -1582,6 +1579,14 @@ Real_t CalcElemVolume( const Real_t x0, const Real_t x1,
 //inline
 Real_t CalcElemVolume( const Real_t x[8], const Real_t y[8], const Real_t z[8] )
 {
+      trace_func_call("CalcElemVolume", 24,
+            "Real_t x0: x[0]", "Real_t x1: x[1]", "Real_t x2: x[2]", "Real_t x3: x[3]",
+            "Real_t x4: x[4]", "Real_t x5: x[5]", "Real_t x6: x[6]", "Real_t x7: x[7]",
+            "Real_t y0: y[0]", "Real_t y1: y[1]", "Real_t y2: y[2]", "Real_t y3: y[3]",
+            "Real_t y4: y[4]", "Real_t y5: y[5]", "Real_t y6: y[6]", "Real_t y7: y[7]",
+            "Real_t z0: z[0]", "Real_t z1: z[1]", "Real_t z2: z[2]", "Real_t z3: z[3]",
+            "Real_t z4: z[4]", "Real_t z5: z[5]", "Real_t z6: z[6]", "Real_t z7: z[7]");
+      trace_func_call_end();
 return CalcElemVolume( x[0], x[1], x[2], x[3], x[4], x[5], x[6], x[7],
                        y[0], y[1], y[2], y[3], y[4], y[5], y[6], y[7],
                        z[0], z[1], z[2], z[3], z[4], z[5], z[6], z[7]);
@@ -1589,7 +1594,7 @@ return CalcElemVolume( x[0], x[1], x[2], x[3], x[4], x[5], x[6], x[7],
 
 /******************************************/
 
-static inline
+// staticinline
 Real_t AreaFace( const Real_t x0, const Real_t x1,
                  const Real_t x2, const Real_t x3,
                  const Real_t y0, const Real_t y1,
@@ -1613,52 +1618,85 @@ Real_t AreaFace( const Real_t x0, const Real_t x1,
 
 /******************************************/
 
-static inline
+// staticinline
 Real_t CalcElemCharacteristicLength( const Real_t x[8],
                                      const Real_t y[8],
                                      const Real_t z[8],
                                      const Real_t volume)
 {
    Real_t a, charLength = Real_t(0.0);
+   trace_func_call("AreaFace", 12,
+               "Real_t x0: x[0]", "Real_t x1: x[1]", "Real_t x2: x[2]", "Real_t x3: x[3]",
+               "Real_t y0: y[0]", "Real_t y1: y[1]", "Real_t y2: y[2]", "Real_t y3: y[3]",
+               "Real_t z0: z[0]", "Real_t z1: z[1]", "Real_t z2: z[2]", "Real_t z3: z[3]");
 
    a = AreaFace(x[0],x[1],x[2],x[3],
                 y[0],y[1],y[2],y[3],
                 z[0],z[1],z[2],z[3]) ;
+   trace_func_call_end();
    charLength = std::max(a,charLength) ;
 
+   trace_func_call("AreaFace", 12,
+               "Real_t x0: x[4]", "Real_t x1: x[5]", "Real_t x2: x[6]", "Real_t x3: x[7]",
+               "Real_t y0: y[4]", "Real_t y1: y[5]", "Real_t y2: y[6]", "Real_t y3: y[7]",
+               "Real_t z0: z[4]", "Real_t z1: z[5]", "Real_t z2: z[6]", "Real_t z3: z[7]");
    a = AreaFace(x[4],x[5],x[6],x[7],
                 y[4],y[5],y[6],y[7],
                 z[4],z[5],z[6],z[7]) ;
+   trace_func_call_end();
    charLength = std::max(a,charLength) ;
 
+   trace_func_call("AreaFace", 12,
+               "Real_t x0: x[0]", "Real_t x1: x[1]", "Real_t x2: x[5]", "Real_t x3: x[4]",
+               "Real_t y0: y[0]", "Real_t y1: y[1]", "Real_t y2: y[5]", "Real_t y3: y[4]",
+               "Real_t z0: z[0]", "Real_t z1: z[1]", "Real_t z2: z[5]", "Real_t z3: z[4]");
    a = AreaFace(x[0],x[1],x[5],x[4],
                 y[0],y[1],y[5],y[4],
                 z[0],z[1],z[5],z[4]) ;
+   trace_func_call_end();
    charLength = std::max(a,charLength) ;
 
+   trace_func_call("AreaFace", 12,
+               "Real_t x0: x[1]", "Real_t x1: x[2]", "Real_t x2: x[6]", "Real_t x3: x[5]",
+               "Real_t y0: y[1]", "Real_t y1: y[2]", "Real_t y2: y[6]", "Real_t y3: y[5]",
+               "Real_t z0: z[1]", "Real_t z1: z[2]", "Real_t z2: z[6]", "Real_t z3: z[5]");
    a = AreaFace(x[1],x[2],x[6],x[5],
                 y[1],y[2],y[6],y[5],
                 z[1],z[2],z[6],z[5]) ;
+   trace_func_call_end();
    charLength = std::max(a,charLength) ;
 
+   trace_func_call("AreaFace", 12,
+               "Real_t x0: x[2]", "Real_t x1: x[3]", "Real_t x2: x[7]", "Real_t x3: x[6]",
+               "Real_t y0: y[2]", "Real_t y1: y[3]", "Real_t y2: y[7]", "Real_t y3: y[6]",
+               "Real_t z0: z[2]", "Real_t z1: z[3]", "Real_t z2: z[7]", "Real_t z3: z[6]");
    a = AreaFace(x[2],x[3],x[7],x[6],
                 y[2],y[3],y[7],y[6],
                 z[2],z[3],z[7],z[6]) ;
+   trace_func_call_end();
    charLength = std::max(a,charLength) ;
 
+   trace_func_call("AreaFace", 12,
+               "Real_t x0: x[3]", "Real_t x1: x[0]", "Real_t x2: x[4]", "Real_t x3: x[7]",
+               "Real_t y0: y[3]", "Real_t y1: y[0]", "Real_t y2: y[4]", "Real_t y3: y[7]",
+               "Real_t z0: z[3]", "Real_t z1: z[0]", "Real_t z2: z[4]", "Real_t z3: z[7]");
    a = AreaFace(x[3],x[0],x[4],x[7],
                 y[3],y[0],y[4],y[7],
                 z[3],z[0],z[4],z[7]) ;
+   trace_func_call_end();
+   
    charLength = std::max(a,charLength) ;
 
+   trace_func_call("SQRT", 1, "real8 arg: charLength");
    charLength = Real_t(4.0) * volume / SQRT(charLength);
+   trace_func_call_end();
 
    return charLength;
 }
 
 /******************************************/
 
-static inline
+// staticinline
 void CalcElemVelocityGradient( const Real_t* const xvel,
                                 const Real_t* const yvel,
                                 const Real_t* const zvel,
@@ -1723,7 +1761,7 @@ void CalcElemVelocityGradient( const Real_t* const xvel,
 
 /******************************************/
 
-//static inline
+//// staticinline
 void CalcKinematicsForElems( Domain &domain,
                              Real_t deltaTime, Index_t numElem )
 {
@@ -1747,17 +1785,27 @@ void CalcKinematicsForElems( Domain &domain,
     const Index_t* const elemToNode = domain.nodelist(k) ;
 
     // get nodal coordinates from global arrays and copy into local arrays.
+    trace_func_call("CollectDomainNodesToElemNodes", 5,
+               "Domain &domain: domain", "const Index_t *elemToNode: elemToNode",
+               "Real_t *elemX: x_local", "Real_t *elemY: y_local", "Real_t *elemZ: z_local");
     CollectDomainNodesToElemNodes(domain, elemToNode, x_local, y_local, z_local);
+    trace_func_call_end();
 
     // volume calculations
+    trace_func_call("CalcElemVolume", 3, "const Real_t *x: x_local", "const Real_t *y: y_local", "const Real_t *z: z_local");
     volume = CalcElemVolume(x_local, y_local, z_local );
+    trace_func_call_end();
+
     relativeVolume = volume / domain.volo(k) ;
     domain.vnew(k) = relativeVolume ;
     domain.delv(k) = relativeVolume - domain.v(k) ;
 
     // set characteristic length
+    trace_func_call("CalcElemCharacteristicLength", 4,
+               "const Real_t *x: x_local", "const Real_t *y: y_local", "const Real_t *z: z_local", "Real_t volume: volume");
     domain.arealg(k) = CalcElemCharacteristicLength(x_local, y_local, z_local,
                                              volume);
+   trace_func_call_end();
 
     // get nodal velocities from global array and copy into local arrays.
     for( Index_t lnode=0 ; lnode<8 ; ++lnode )
@@ -1776,11 +1824,20 @@ void CalcKinematicsForElems( Domain &domain,
        z_local[j] -= dt2 * zd_local[j];
     }
 
+    trace_func_call("CalcElemShapeFunctionDerivatives", 5,
+               "const Real_t *x: x_local", "const Real_t *y: y_local", "const Real_t *z: z_local",
+               "Real_t (*b)[8]: B", "Real_t *volume: &detJ");
     CalcElemShapeFunctionDerivatives( x_local, y_local, z_local,
                                       B, &detJ );
+   trace_func_call_end();
 
+
+   trace_func_call("CalcElemVelocityGradient", 6,
+            "const Real_t *xvel: xd_local", "const Real_t *yvel: yd_local", "const Real_t *zvel: zd_local",
+            "const Real_t (*b)[8]: B", "Real_t detJ: detJ", "Real_t *d: D");
     CalcElemVelocityGradient( xd_local, yd_local, zd_local,
                                B, detJ, D );
+   trace_func_call_end();
 
     // put velocity gradient quantities into their global arrays.
     domain.dxx(k) = D[0];
@@ -1791,16 +1848,20 @@ void CalcKinematicsForElems( Domain &domain,
 
 /******************************************/
 
-static inline
+// staticinline
 void CalcLagrangeElements(Domain& domain)
 {
    Index_t numElem = domain.numElem() ;
    if (numElem > 0) {
       const Real_t deltatime = domain.deltatime() ;
 
+      trace_func_call("AllocateStrains", 1, "Int_t numElem: numElem"); 
       domain.AllocateStrains(numElem);
+      trace_func_call_end();
 
+      trace_func_call("CalcKinematicsForElems", 3, "Domain &domain: domain", "Real_t deltaTime: deltaTime", "Index_t numElem: numElem"); 
       CalcKinematicsForElems(domain, deltatime, numElem) ;
+      trace_func_call_end();
 
       // element loop to do some stuff not included in the elemlib function.
 #pragma omp parallel for firstprivate(numElem)
@@ -1826,13 +1887,15 @@ void CalcLagrangeElements(Domain& domain)
 #endif
         }
       }
+      trace_func_call("DeallocateStrains", 0); 
       domain.DeallocateStrains();
+      trace_func_call_end();
    }
 }
 
 /******************************************/
 
-static inline
+// staticinline
 void CalcMonotonicQGradientsForElems(Domain& domain)
 {
    Index_t numElem = domain.numElem();
@@ -1928,7 +1991,9 @@ void CalcMonotonicQGradientsForElems(Domain& domain)
       ay = dzi*dxj - dxi*dzj ;
       az = dxi*dyj - dyi*dxj ;
 
-      domain.delx_zeta(i) = vol / SQRT(ax*ax + ay*ay + az*az + ptiny) ;
+      trace_func_call("SQRT", 1, "real8 arg: ax*ax + ay*ay + az*az + ptiny");
+      domain.delx_zeta(i) = vol / SQRT(ax*ax + ay*ay + az*az + ptiny) ; 
+      trace_func_call_end();
 
       ax *= norm ;
       ay *= norm ;
@@ -1946,7 +2011,9 @@ void CalcMonotonicQGradientsForElems(Domain& domain)
       ay = dzj*dxk - dxj*dzk ;
       az = dxj*dyk - dyj*dxk ;
 
+      trace_func_call("SQRT", 1, "real8 arg: ax*ax + ay*ay + az*az + ptiny");
       domain.delx_xi(i) = vol / SQRT(ax*ax + ay*ay + az*az + ptiny) ;
+      trace_func_call_end();
 
       ax *= norm ;
       ay *= norm ;
@@ -1964,7 +2031,9 @@ void CalcMonotonicQGradientsForElems(Domain& domain)
       ay = dzk*dxi - dxk*dzi ;
       az = dxk*dyi - dyk*dxi ;
 
+      trace_func_call("SQRT", 1, "real8 arg: ax*ax + ay*ay + az*az + ptiny"); 
       domain.delx_eta(i) = vol / SQRT(ax*ax + ay*ay + az*az + ptiny) ;
+      trace_func_call_end();
 
       ax *= norm ;
       ay *= norm ;
@@ -1980,7 +2049,7 @@ void CalcMonotonicQGradientsForElems(Domain& domain)
 
 /******************************************/
 
-static inline
+// staticinline
 void CalcMonotonicQRegionForElems(Domain &domain, Int_t r,
                                   Real_t ptiny)
 {
@@ -2144,7 +2213,7 @@ void CalcMonotonicQRegionForElems(Domain &domain, Int_t r,
 
 /******************************************/
 
-static inline
+// staticinline
 void CalcMonotonicQForElems(Domain& domain)
 {  
    //
@@ -2157,14 +2226,16 @@ void CalcMonotonicQForElems(Domain& domain)
    //
    for (Index_t r=0 ; r<domain.numReg() ; ++r) {
       if (domain.regElemSize(r) > 0) {
+         trace_func_call("CalcMonotonicQRegionForElems", 2, "Domain &domain: domain", "Int_t r, Real_t ptiny: ptiny"); 
          CalcMonotonicQRegionForElems(domain, r, ptiny) ;
+         trace_func_call_end();
       }
    }
 }
 
 /******************************************/
 
-static inline
+// staticinline
 void CalcQForElems(Domain& domain)
 {
    //
@@ -2179,7 +2250,9 @@ void CalcQForElems(Domain& domain)
             2*domain.sizeX()*domain.sizeZ() + /* row ghosts */
             2*domain.sizeY()*domain.sizeZ() ; /* col ghosts */
 
+      trace_func_call("AllocateGradients", 2, "Int_t numElem: numElem", "Int_t allElem: allElem"); 
       domain.AllocateGradients(numElem, allElem);
+      trace_func_call_end();
 
 #if USE_MPI      
       CommRecv(domain, MSG_MONOQ, 3,
@@ -2188,7 +2261,9 @@ void CalcQForElems(Domain& domain)
 #endif      
 
       /* Calculate velocity gradients */
+      trace_func_call("CalcMonotonicQGradientsForElems", 1, "Domain &domain: domain"); 
       CalcMonotonicQGradientsForElems(domain);
+      trace_func_call_end();
 
 #if USE_MPI      
       Domain_member fieldData[3] ;
@@ -2207,10 +2282,14 @@ void CalcQForElems(Domain& domain)
       CommMonoQ(domain) ;
 #endif      
 
+      trace_func_call("CalcMonotonicQForElems", 1, "Domain &domain: domain"); 
       CalcMonotonicQForElems(domain);
+      trace_func_call_end();
 
       // Free up memory
+      trace_func_call("DeallocateGradients", 0); 
       domain.DeallocateGradients();
+      trace_func_call_end();
 
       /* Don't allow excessive artificial viscosity */
       Index_t idx = -1; 
@@ -2225,7 +2304,10 @@ void CalcQForElems(Domain& domain)
 #if USE_MPI         
          MPI_Abort(MPI_COMM_WORLD, QStopError) ;
 #else
+         
+         trace_func_call("exit", 1, "int _Code: QStopError"); 
          exit(QStopError);
+         trace_func_call_end();
 #endif
       }
    }
@@ -2233,7 +2315,7 @@ void CalcQForElems(Domain& domain)
 
 /******************************************/
 
-static inline
+// staticinline
 void CalcPressureForElems(Real_t* p_new, Real_t* bvc,
                           Real_t* pbvc, Real_t* e_old,
                           Real_t* compression, Real_t *vnewc,
@@ -2254,8 +2336,10 @@ void CalcPressureForElems(Real_t* p_new, Real_t* bvc,
       
       p_new[i] = bvc[i] * e_old[i] ;
 
+      trace_func_call("FABS", 1, "real8 arg: p_new[i]");
       if    (FABS(p_new[i]) <  p_cut   )
          p_new[i] = Real_t(0.0) ;
+      trace_func_call_end();
 
       if    ( vnewc[ielem] >= eosvmax ) /* impossible condition here? */
          p_new[i] = Real_t(0.0) ;
@@ -2267,7 +2351,7 @@ void CalcPressureForElems(Real_t* p_new, Real_t* bvc,
 
 /******************************************/
 
-static inline
+// staticinline
 void CalcEnergyForElems(Real_t* p_new, Real_t* e_new, Real_t* q_new,
                         Real_t* bvc, Real_t* pbvc,
                         Real_t* p_old, Real_t* e_old, Real_t* q_old,
@@ -2279,7 +2363,9 @@ void CalcEnergyForElems(Real_t* p_new, Real_t* e_new, Real_t* q_new,
                         Real_t eosvmax,
                         Index_t length, Index_t *regElemList)
 {
+   trace_func_call("Allocate", 1, "size_t size: length"); 
    Real_t *pHalfStep = Allocate<Real_t>(length) ;
+   trace_func_call_end();
 
 #pragma omp parallel for firstprivate(length, emin)
    for (Index_t i = 0 ; i < length ; ++i) {
@@ -2291,8 +2377,13 @@ void CalcEnergyForElems(Real_t* p_new, Real_t* e_new, Real_t* q_new,
       }
    }
 
+   trace_func_call("CalcPressureForElems", 11,
+               "Real_t *p_new: pHalfStep", "Real_t *bvc: bvc", "Real_t *pbvc: pbvc", "Real_t *e_old: e_new",
+               "Real_t *compression: compHalfStep", "Real_t *vnewc: vnewc", "Real_t pmin: pmin", "Real_t p_cut: p_cut",
+               "Real_t eosvmax: eosvmax", "Index_t length: length", "Index_t *regElemList: regElemList");
    CalcPressureForElems(pHalfStep, bvc, pbvc, e_new, compHalfStep, vnewc,
                         pmin, p_cut, eosvmax, length, regElemList);
+   trace_func_call_end();
 
 #pragma omp parallel for firstprivate(length, rho0)
    for (Index_t i = 0 ; i < length ; ++i) {
@@ -2308,7 +2399,9 @@ void CalcEnergyForElems(Real_t* p_new, Real_t* e_new, Real_t* q_new,
          if ( ssc <= Real_t(.1111111e-36) ) {
             ssc = Real_t(.3333333e-18) ;
          } else {
+            trace_func_call("SQRT", 1, "real8 arg: ssc"); 
             ssc = SQRT(ssc) ;
+            trace_func_call_end();
          }
 
          q_new[i] = (ssc*ql_old[i] + qq_old[i]) ;
@@ -2323,17 +2416,22 @@ void CalcEnergyForElems(Real_t* p_new, Real_t* e_new, Real_t* q_new,
    for (Index_t i = 0 ; i < length ; ++i) {
 
       e_new[i] += Real_t(0.5) * work[i];
-
+      trace_func_call("FABS", 1, "real8 arg: e_new[i]"); 
       if (FABS(e_new[i]) < e_cut) {
          e_new[i] = Real_t(0.)  ;
       }
+      trace_func_call_end();
       if (     e_new[i]  < emin ) {
          e_new[i] = emin ;
       }
    }
-
+   trace_func_call("CalcPressureForElems", 11,
+               "Real_t *p_new: p_new", "Real_t *bvc: bvc", "Real_t *pbvc: pbvc", "Real_t *e_old: e_new",
+               "Real_t *compression: compression", "Real_t *vnewc: vnewc", "Real_t pmin: pmin", "Real_t p_cut: p_cut",
+               "Real_t eosvmax: eosvmax", "Index_t length: length", "Index_t *regElemList: regElemList");
    CalcPressureForElems(p_new, bvc, pbvc, e_new, compression, vnewc,
                         pmin, p_cut, eosvmax, length, regElemList);
+   trace_func_call_end();
 
 #pragma omp parallel for firstprivate(length, rho0, emin, e_cut)
    for (Index_t i = 0 ; i < length ; ++i){
@@ -2351,7 +2449,9 @@ void CalcEnergyForElems(Real_t* p_new, Real_t* e_new, Real_t* q_new,
          if ( ssc <= Real_t(.1111111e-36) ) {
             ssc = Real_t(.3333333e-18) ;
          } else {
+            trace_func_call("SQRT", 1, "real8 arg: ssc"); 
             ssc = SQRT(ssc) ;
+            trace_func_call_end();
          }
 
          q_tilde = (ssc*ql_old[i] + qq_old[i]) ;
@@ -2360,17 +2460,22 @@ void CalcEnergyForElems(Real_t* p_new, Real_t* e_new, Real_t* q_new,
       e_new[i] = e_new[i] - (  Real_t(7.0)*(p_old[i]     + q_old[i])
                                - Real_t(8.0)*(pHalfStep[i] + q_new[i])
                                + (p_new[i] + q_tilde)) * delvc[i]*sixth ;
-
+      trace_func_call("FABS", 1, "real8 arg: e_new[i]"); 
       if (FABS(e_new[i]) < e_cut) {
          e_new[i] = Real_t(0.)  ;
       }
+      trace_func_call_end();
       if (     e_new[i]  < emin ) {
          e_new[i] = emin ;
       }
    }
-
+   trace_func_call("CalcPressureForElems", 11,
+               "Real_t *p_new: p_new", "Real_t *bvc: bvc", "Real_t *pbvc: pbvc", "Real_t *e_old: e_new",
+               "Real_t *compression: compression", "Real_t *vnewc: vnewc", "Real_t pmin: pmin", "Real_t p_cut: p_cut",
+               "Real_t eosvmax: eosvmax", "Index_t length: length", "Index_t *regElemList: regElemList");
    CalcPressureForElems(p_new, bvc, pbvc, e_new, compression, vnewc,
                         pmin, p_cut, eosvmax, length, regElemList);
+   trace_func_call_end();
 
 #pragma omp parallel for firstprivate(length, rho0, q_cut)
    for (Index_t i = 0 ; i < length ; ++i){
@@ -2383,23 +2488,29 @@ void CalcEnergyForElems(Real_t* p_new, Real_t* e_new, Real_t* q_new,
          if ( ssc <= Real_t(.1111111e-36) ) {
             ssc = Real_t(.3333333e-18) ;
          } else {
+            trace_func_call("SQRT", 1, "real8 arg: ssc"); 
             ssc = SQRT(ssc) ;
+            trace_func_call_end();
          }
 
          q_new[i] = (ssc*ql_old[i] + qq_old[i]) ;
-
+         trace_func_call("FABS", 1, "real8 arg: q_new[i]"); 
          if (FABS(q_new[i]) < q_cut) q_new[i] = Real_t(0.) ;
+         trace_func_call_end();
       }
    }
-
+    
+ 
+   trace_func_call("Release", 1, "Real_t **ptr: &pHalfStep"); 
    Release(&pHalfStep) ;
+   trace_func_call_end();
 
    return ;
 }
 
 /******************************************/
 
-static inline
+// staticinline
 void CalcSoundSpeedForElems(Domain &domain,
                             Real_t *vnewc, Real_t rho0, Real_t *enewc,
                             Real_t *pnewc, Real_t *pbvc,
@@ -2415,7 +2526,9 @@ void CalcSoundSpeedForElems(Domain &domain,
          ssTmp = Real_t(.3333333e-18);
       }
       else {
+         trace_func_call("SQRT", 1, "real8 arg: ssTmp"); 
          ssTmp = SQRT(ssTmp);
+         trace_func_call_end();
       }
       domain.ss(ielem) = ssTmp ;
    }
@@ -2423,7 +2536,7 @@ void CalcSoundSpeedForElems(Domain &domain,
 
 /******************************************/
 
-static inline
+// staticinline
 void EvalEOSForElems(Domain& domain, Real_t *vnewc,
                      Int_t numElemReg, Index_t *regElemList, Int_t rep)
 {
@@ -2441,20 +2554,61 @@ void EvalEOSForElems(Domain& domain, Real_t *vnewc,
    // These temporaries will be of different size for 
    // each call (due to different sized region element
    // lists)
+   trace_func_call("Allocate", 1, "size_t size: numElemReg"); 
    Real_t *e_old = Allocate<Real_t>(numElemReg) ;
+   trace_func_call_end();
+
+   trace_func_call("Allocate", 1, "size_t size: numElemReg"); 
    Real_t *delvc = Allocate<Real_t>(numElemReg) ;
+   trace_func_call_end();
+
+   trace_func_call("Allocate", 1, "size_t size: numElemReg"); 
    Real_t *p_old = Allocate<Real_t>(numElemReg) ;
+   trace_func_call_end();
+
+   trace_func_call("Allocate", 1, "size_t size: numElemReg"); 
    Real_t *q_old = Allocate<Real_t>(numElemReg) ;
+   trace_func_call_end();
+
+   trace_func_call("Allocate", 1, "size_t size: numElemReg"); 
    Real_t *compression = Allocate<Real_t>(numElemReg) ;
+   trace_func_call_end();
+
+   trace_func_call("Allocate", 1, "size_t size: numElemReg"); 
    Real_t *compHalfStep = Allocate<Real_t>(numElemReg) ;
+   trace_func_call_end();
+
+   trace_func_call("Allocate", 1, "size_t size: numElemReg"); 
    Real_t *qq_old = Allocate<Real_t>(numElemReg) ;
+   trace_func_call_end();
+
+   trace_func_call("Allocate", 1, "size_t size: numElemReg"); 
    Real_t *ql_old = Allocate<Real_t>(numElemReg) ;
+   trace_func_call_end();
+
+   trace_func_call("Allocate", 1, "size_t size: numElemReg"); 
    Real_t *work = Allocate<Real_t>(numElemReg) ;
+   trace_func_call_end();
+
+   trace_func_call("Allocate", 1, "size_t size: numElemReg"); 
    Real_t *p_new = Allocate<Real_t>(numElemReg) ;
+   trace_func_call_end();
+
+   trace_func_call("Allocate", 1, "size_t size: numElemReg"); 
    Real_t *e_new = Allocate<Real_t>(numElemReg) ;
+   trace_func_call_end();
+
+   trace_func_call("Allocate", 1, "size_t size: numElemReg"); 
    Real_t *q_new = Allocate<Real_t>(numElemReg) ;
+   trace_func_call_end();
+
+   trace_func_call("Allocate", 1, "size_t size: numElemReg"); 
    Real_t *bvc = Allocate<Real_t>(numElemReg) ;
+   trace_func_call_end();
+
+   trace_func_call("Allocate", 1, "size_t size: numElemReg"); 
    Real_t *pbvc = Allocate<Real_t>(numElemReg) ;
+   trace_func_call_end();
  
    //loop to add load imbalance based on region number 
    for(Int_t j = 0; j < rep; j++) {
@@ -2508,12 +2662,21 @@ void EvalEOSForElems(Domain& domain, Real_t *vnewc,
             work[i] = Real_t(0.) ; 
          }
       }
+      trace_func_call("CalcEnergyForElems", 24,
+               "Real_t *p_new: p_new", "Real_t *e_new: e_new", "Real_t *q_new: q_new", "Real_t *bvc: bvc",
+               "Real_t *pbvc: pbvc", "Real_t *p_old: p_old", "Real_t *e_old: e_old", "Real_t *q_old: q_old",
+               "Real_t *compression: compression", "Real_t *compHalfStep: compHalfStep", "Real_t *vnewc: vnewc",
+               "Real_t *work: work", "Real_t *delvc: delvc", "Real_t pmin: pmin", "Real_t p_cut: p_cut",
+               "Real_t e_cut: e_cut", "Real_t q_cut: q_cut", "Real_t emin: emin", "Real_t *qq_old: qq_old",
+               "Real_t *ql_old: ql_old", "Real_t rho0: rho0", "Real_t eosvmax: eosvmax",
+               "Index_t length: numElemReg", "Index_t *regElemList: regElemList");
       CalcEnergyForElems(p_new, e_new, q_new, bvc, pbvc,
                          p_old, e_old,  q_old, compression, compHalfStep,
                          vnewc, work,  delvc, pmin,
                          p_cut, e_cut, q_cut, emin,
                          qq_old, ql_old, rho0, eosvmax,
                          numElemReg, regElemList);
+      trace_func_call_end();
    }
 
 #pragma omp parallel for firstprivate(numElemReg)
@@ -2524,30 +2687,77 @@ void EvalEOSForElems(Domain& domain, Real_t *vnewc,
       domain.q(ielem) = q_new[i] ;
    }
 
+   trace_func_call("CalcSoundSpeedForElems", 10,
+               "Domain &domain: domain", "Real_t *vnewc: vnewc", "Real_t rho0: rho0", "Real_t *enewc: e_new",
+               "Real_t *pnewc: p_new", "Real_t *pbvc: pbvc", "Real_t *bvc: bvc", "Real_t ss4o3: ss4o3",
+               "Index_t len: numElemReg", "Index_t *regElemList: regElemList");
    CalcSoundSpeedForElems(domain,
                           vnewc, rho0, e_new, p_new,
                           pbvc, bvc, ss4o3,
                           numElemReg, regElemList) ;
+   trace_func_call_end();
 
+   trace_func_call("Release", 1, "Real_t **ptr: &pbvc"); 
    Release(&pbvc) ;
+   trace_func_call_end();
+
+   trace_func_call("Release", 1, "Real_t **ptr: &bvc"); 
    Release(&bvc) ;
+   trace_func_call_end();
+
+   trace_func_call("Release", 1, "Real_t **ptr: &q_new"); 
    Release(&q_new) ;
+   trace_func_call_end();
+
+   trace_func_call("Release", 1, "Real_t **ptr: &e_new"); 
    Release(&e_new) ;
+   trace_func_call_end();
+
+   trace_func_call("Release", 1, "Real_t **ptr: &p_new"); 
    Release(&p_new) ;
+   trace_func_call_end();
+
+   trace_func_call("Release", 1, "Real_t **ptr: &work"); 
    Release(&work) ;
+   trace_func_call_end();
+
+   trace_func_call("Release", 1, "Real_t **ptr: &ql_old"); 
    Release(&ql_old) ;
+   trace_func_call_end();
+
+   trace_func_call("Release", 1, "Real_t **ptr: &qq_old"); 
    Release(&qq_old) ;
+   trace_func_call_end();
+
+   trace_func_call("Release", 1, "Real_t **ptr: &compHalfStep"); 
    Release(&compHalfStep) ;
+   trace_func_call_end();
+
+   trace_func_call("Release", 1, "Real_t **ptr: &compression"); 
    Release(&compression) ;
+   trace_func_call_end();
+
+   trace_func_call("Release", 1, "Real_t **ptr: &q_old"); 
    Release(&q_old) ;
+   trace_func_call_end();
+
+   trace_func_call("Release", 1, "Real_t **ptr: &p_old"); 
    Release(&p_old) ;
+   trace_func_call_end();
+
+   trace_func_call("Release", 1, "Real_t **ptr: &delvc"); 
    Release(&delvc) ;
+   trace_func_call_end();
+
+   trace_func_call("Release", 1, "Real_t **ptr: &e_old"); 
    Release(&e_old) ;
+   trace_func_call_end();
+
 }
 
 /******************************************/
 
-static inline
+// staticinline
 void ApplyMaterialPropertiesForElems(Domain& domain)
 {
    Index_t numElem = domain.numElem() ;
@@ -2556,7 +2766,10 @@ void ApplyMaterialPropertiesForElems(Domain& domain)
     /* Expose all of the variables needed for material evaluation */
     Real_t eosvmin = domain.eosvmin() ;
     Real_t eosvmax = domain.eosvmax() ;
+
+    trace_func_call("Allocate", 1, "size_t size: numElem");
     Real_t *vnewc = Allocate<Real_t>(numElem) ;
+    trace_func_call_end();
 
 #pragma omp parallel
     {
@@ -2600,7 +2813,9 @@ void ApplyMaterialPropertiesForElems(Domain& domain)
 #if USE_MPI
              MPI_Abort(MPI_COMM_WORLD, VolumeError) ;
 #else
+             trace_func_call("exit", 1, "int _Code: VolumeError"); 
              exit(VolumeError);
+             trace_func_call_end();
 #endif
           }
        }
@@ -2620,16 +2835,22 @@ void ApplyMaterialPropertiesForElems(Domain& domain)
        //very expensive regions
        else
 	 rep = 10 * (1+ domain.cost());
+       trace_func_call("EvalEOSForElems", 5,
+            "Domain &domain: domain", "Real_t *vnewc: vnewc", "Int_t numElemReg: numElemReg",
+            "Index_t *regElemList: regElemList", "Int_t rep: rep");
        EvalEOSForElems(domain, vnewc, numElemReg, regElemList, rep);
+       trace_func_call_end();
     }
 
+    trace_func_call("Release", 1, "Real_t **ptr: &vnewc");
     Release(&vnewc) ;
+    trace_func_call_end();
   }
 }
 
 /******************************************/
 
-static inline
+// staticinline
 void UpdateVolumesForElems(Domain &domain,
                            Real_t v_cut, Index_t length)
 {
@@ -2637,10 +2858,10 @@ void UpdateVolumesForElems(Domain &domain,
 #pragma omp parallel for firstprivate(length, v_cut)
       for(Index_t i=0 ; i<length ; ++i) {
          Real_t tmpV = domain.vnew(i) ;
-
+         trace_func_call("FABS", 1, "real8 arg: tmpV - Real_t(1.0)"); 
          if ( FABS(tmpV - Real_t(1.0)) < v_cut )
             tmpV = Real_t(1.0) ;
-
+         trace_func_call_end();
          domain.v(i) = tmpV ;
       }
    }
@@ -2650,23 +2871,32 @@ void UpdateVolumesForElems(Domain &domain,
 
 /******************************************/
 
-static inline
+// staticinline
 void LagrangeElements(Domain& domain, Index_t numElem)
 {
+
+  trace_func_call("CalcLagrangeElements", 1, "Domain &domain: domain"); 
   CalcLagrangeElements(domain) ;
+  trace_func_call_end();
 
   /* Calculate Q.  (Monotonic q option requires communication) */
+  trace_func_call("CalcQForElems", 1, "Domain &domain: domain"); 
   CalcQForElems(domain) ;
+  trace_func_call_end();
 
+  trace_func_call("ApplyMaterialPropertiesForElems", 1, "Domain &domain: domain"); 
   ApplyMaterialPropertiesForElems(domain) ;
+  trace_func_call_end();
 
+  trace_func_call("UpdateVolumesForElems", 1, "Domain &domain: domain", "Real_t v_cut: domain.v_cut()", "Index_t length: numElem"); 
   UpdateVolumesForElems(domain, 
                         domain.v_cut(), numElem) ;
+  trace_func_call_end();
 }
 
 /******************************************/
 
-static inline
+// staticinline
 void CalcCourantConstraintForElems(Domain &domain, Index_t length,
                                    Index_t *regElemlist,
                                    Real_t qqc, Real_t& dtcourant)
@@ -2703,8 +2933,9 @@ void CalcCourantConstraintForElems(Domain &domain, Index_t length,
                 + qqc2 * domain.arealg(indx) * domain.arealg(indx)
                 * domain.vdov(indx) * domain.vdov(indx) ;
          }
-
+         trace_func_call("SQRT", 1, "real8 arg: dtf"); 
          dtf = SQRT(dtf) ;
+         trace_func_call_end();
          dtf = domain.arealg(indx) / dtf ;
 
          if (domain.vdov(indx) != Real_t(0.)) {
@@ -2736,7 +2967,7 @@ void CalcCourantConstraintForElems(Domain &domain, Index_t length,
 
 /******************************************/
 
-static inline
+// staticinline
 void CalcHydroConstraintForElems(Domain &domain, Index_t length,
                                  Index_t *regElemlist, Real_t dvovmax, Real_t& dthydro)
 {
@@ -2766,7 +2997,9 @@ void CalcHydroConstraintForElems(Domain &domain, Index_t length,
          Index_t indx = regElemlist[i] ;
 
          if (domain.vdov(indx) != Real_t(0.)) {
+            trace_func_call("FABS", 1, "real8 arg: domain.vdov(indx))+Real_t(1.e-20)"); 
             Real_t dtdvov = dvovmax / (FABS(domain.vdov(indx))+Real_t(1.e-20)) ;
+            trace_func_call_end();
 
             if ( dthydro_tmp > dtdvov ) {
                   dthydro_tmp = dtdvov ;
@@ -2795,7 +3028,7 @@ void CalcHydroConstraintForElems(Domain &domain, Index_t length,
 
 /******************************************/
 
-static inline
+// staticinline
 void CalcTimeConstraintsForElems(Domain& domain) {
 
    // Initialize conditions to a very large value
@@ -2804,40 +3037,55 @@ void CalcTimeConstraintsForElems(Domain& domain) {
 
    for (Index_t r=0 ; r < domain.numReg() ; ++r) {
       /* evaluate time constraint */
+      trace_func_call("CalcCourantConstraintForElems", 5,
+               "Domain &domain: domain", "Index_t length: domain.regElemSize(r)",
+               "Index_t *regElemlist: domain.regElemlist(r)", "Real_t qqc: domain.qqc()",
+               "Real_t &dtcourant: domain.dtcourant()");
       CalcCourantConstraintForElems(domain, domain.regElemSize(r),
                                     domain.regElemlist(r),
                                     domain.qqc(),
                                     domain.dtcourant()) ;
+      trace_func_call_end();
 
       /* check hydro constraint */
+      trace_func_call("CalcHydroConstraintForElems", 5,
+               "Domain &domain: domain", "Index_t length: domain.regElemSize(r)",
+               "Index_t *regElemlist: domain.regElemlist(r)", "Real_t dvovmax: domain.dvovmax()",
+               "Real_t &dthydro: domain.dthydro()");
       CalcHydroConstraintForElems(domain, domain.regElemSize(r),
                                   domain.regElemlist(r),
                                   domain.dvovmax(),
                                   domain.dthydro()) ;
+      trace_func_call_end();
    }
 }
 
 /******************************************/
 
-
+// staticinline
 void LagrangeLeapFrog(Domain& domain)
 {
-   buildCCT(2);
+    
 #ifdef SEDOV_SYNC_POS_VEL_LATE
    Domain_member fieldData[6] ;
 #endif
 
    /* calculate nodal forces, accelerations, velocities, positions, with
     * applied boundary conditions and slide surface considerations */
+
+   trace_func_call("LagrangeNodal", 1, "Domain &domain: domain"); 
    LagrangeNodal(domain);
+   trace_func_call_end();
 
 
 #ifdef SEDOV_SYNC_POS_VEL_LATE
 #endif
 
    /* calculate element quantities (i.e. velocity gradient & q), and update
-    * material states */
+    * material states */                           //arg    /param
+   trace_func_call("LagrangeElements", 2, "Domain &domain: domain", "Index_t& numElem: domain.numElem()");
    LagrangeElements(domain, domain.numElem());
+   trace_func_call_end();
 
 #if USE_MPI   
 #ifdef SEDOV_SYNC_POS_VEL_LATE
@@ -2857,14 +3105,15 @@ void LagrangeLeapFrog(Domain& domain)
             false, false) ;
 #endif
 #endif   
-
+   trace_func_call("CalcTimeConstraintsForElems", 1, "Domain &domain: domain");
    CalcTimeConstraintsForElems(domain);
+   trace_func_call_end();
 
 #if USE_MPI   
 #ifdef SEDOV_SYNC_POS_VEL_LATE
    CommSyncPosVel(domain) ;
 #endif
-#endif   
+#endif 
 
 }
 
@@ -2873,16 +3122,13 @@ void LagrangeLeapFrog(Domain& domain)
 
 int main(int argc, char *argv[])
 {
-   dotFileWrite << "digraph ContextTree {" << std::endl;
-   buildCCT(0);
+   bootstrap();
    Domain *locDom ;
    int numRanks ;
    int myRank ;
    struct cmdLineOpts opts;
-   
 
-#if USE_MPI  
-   std::cout << "USED MPI" << std::endl;
+#if USE_MPI   
    Domain_member fieldData ;
    
 #ifdef _OPENMP
@@ -2905,6 +3151,7 @@ int main(int argc, char *argv[])
    numRanks = 1;
    myRank = 0;
 #endif   
+
    /* Set defaults that can be overridden by command line opts */
    opts.its = 9999999;
    opts.nx  = 30;
@@ -2916,7 +3163,11 @@ int main(int argc, char *argv[])
    opts.balance = 1;
    opts.cost = 1;
 
+   trace_func_call("ParseCommandLineOptions", 4,
+               "int argc: argc", "char **argv: argv", "Int_t myRank: myRank",
+               "cmdLineOpts *opts: &opts");
    ParseCommandLineOptions(argc, argv, myRank, &opts);
+   trace_func_call_end();
 
    if ((myRank == 0) && (opts.quiet == 0)) {
       std::cout << "Running problem size " << opts.nx << "^3 per domain until completion\n";
@@ -2936,7 +3187,13 @@ int main(int argc, char *argv[])
 
    // Set up the mesh and decompose. Assumes regular cubes for now
    Int_t col, row, plane, side;
+   
+   trace_func_call("InitMeshDecomp", 6,
+               "Int_t numRanks: numRanks", "Int_t myRank: myRank",
+               "Int_t *col: &col", "Int_t *row: &row",
+               "Int_t *plane: &plane", "Int_t *side: &side");
    InitMeshDecomp(numRanks, myRank, &col, &row, &plane, &side);
+   trace_func_call_end();
 
    // Build the main data structure and initialize it
    locDom = new Domain(numRanks, col, row, plane, opts.nx,
@@ -2969,33 +3226,26 @@ int main(int argc, char *argv[])
 //debug to see region sizes
 //   for(Int_t i = 0; i < locDom->numReg(); i++)
 //      std::cout << "region" << i + 1<< "size" << locDom->regElemSize(i) <<std::endl;
-//   while((locDom->time() < locDom->stoptime()) && (locDom->cycle() < opts.its))
+   long iteration = 0;
+   while((locDom->time() < locDom->stoptime()) && (locDom->cycle() < opts.its)) {
+      trace_func_call("TimeIncrement", 1, "Domain &domain: *locDom");
+      TimeIncrement(*locDom) ;
+      trace_func_call_end();
 
-   buildCCT(2);
-   for (int i = 0; i < 10; i++){
-      TimeIncrement(*locDom);
-      
+      trace_func_call("LagrangeLeapFrog", 1, "Domain &domain: *locDom");
+      LagrangeLeapFrog(*locDom) ;
+      trace_func_call_end();
 
-   /*
-      
-      LagrangeLeapFrog(*locDom);
       if ((opts.showProg != 0) && (opts.quiet == 0) && (myRank == 0)) {
          std::cout << "cycle = " << locDom->cycle()       << ", "
-                     << std::scientific
-                     << "time = " << double(locDom->time()) << ", "
-                     << "dt="     << double(locDom->deltatime()) << "\n";
+                   << std::scientific
+                   << "time = " << double(locDom->time()) << ", "
+                   << "dt="     << double(locDom->deltatime()) << "\n";
          std::cout.unsetf(std::ios_base::floatfield);
       }
-      */
+      std::cout << iteration << std::endl;
+      iteration++;
    }
-
-
-
-   dotFileWrite << "}" << std::endl;
-   dotFileWrite.close();
-
-   delete[] stack_symbols;
-
 
    // Use reduced max elapsed time
    double elapsed_time;
@@ -3016,11 +3266,17 @@ int main(int argc, char *argv[])
 
    // Write out final viz file */
    if (opts.viz) {
+      trace_func_call("DumpToVisit", 4,
+               "Domain &domain: *locDom", "int numFiles: opts.numFiles", "int myRank: myRank", "int numRanks: numRanks");
       DumpToVisit(*locDom, opts.numFiles, myRank, numRanks) ;
+      trace_func_call_end();
    }
    
    if ((myRank == 0) && (opts.quiet == 0)) {
+      trace_func_call("VerifyAndWriteFinalOutput", 4,
+               "Real_t elapsed_time: elapsed_timeG", "Domain &locDom: *locDom", "Int_t nx: opts.nx", "Int_t numRanks: numRanks");
       VerifyAndWriteFinalOutput(elapsed_timeG, *locDom, opts.nx, numRanks);
+      trace_func_call_end();
    }
 
    delete locDom; 
@@ -3028,7 +3284,10 @@ int main(int argc, char *argv[])
 #if USE_MPI
    MPI_Finalize() ;
 #endif
-   delete[] stack_symbols;
+   finalize();
+   std::cout << "FInalize Called" << std::endl;
    return 0 ;
 }
 
+
+//yyan7@uncc.edu

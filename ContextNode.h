@@ -6,47 +6,73 @@
 #include <libunwind.h>
 
 class ContextNode {
+    
 private:
+
+    ContextNode* parent;
+    std::vector<ContextNode*> children;
+    void* return_addr; //this is used to uniquely identify a call location
+    int callCount;
+
+    void* frame_addr;
     std::string funcName;
-    std::vector<std::string> parameters;
     unw_word_t start_ip;
     unw_word_t end_ip;
     unw_word_t lsda;
-    unw_word_t handler;
+    unw_word_t handler; 
     unw_word_t global_pointer;
     unw_word_t flags;
-    ContextNode* parent;
-    std::vector<ContextNode*> children;
-    int callCount = 0;
-    bool isInTree;
+    std::vector<std::string> parameters;
+    std::vector<std::string> arguments;
+
 public:
-    ContextNode(std::string funcName = "",
-                std::vector<std::string> parameters = {},
-                unw_word_t start_ip = {},
-                unw_word_t end_ip = {},
-                unw_word_t lsda = {},
-                unw_word_t handler = {},
-                unw_word_t global_pointer = {},
-                unw_word_t flags = {});
+    ContextNode(        void* frame_addr, 
+                        void* return_addr, 
+                        std::string funcName,
+                        unw_word_t start_ip,
+                        unw_word_t end_ip,
+                        unw_word_t lsda,
+                        unw_word_t handler,
+                        unw_word_t global_pointer,
+                        unw_word_t flags,
+                        std::vector<std::string> parameters);
 
-    void setChildren(ContextNode* child = nullptr);
-    void setParent(ContextNode* parent = nullptr);
-    void setCallCount();
-    void setIfInTree(bool inTree);
 
-    std::string functionName();
-    std::vector<std::string> getParameters();
+    ContextNode(std::string funcName, void* return_addr);
+
+    ~ContextNode();
+
+    void addChild(ContextNode* node);
+    void removeChild();
+
+    void setParentNode(ContextNode* node);
+
+    std::string getFunctionName();
+    ContextNode* getParentNode();
+
+    std::vector<std::string> & getParameters();
+
+    std::vector<std::string> &getArguments();
+    void addArgument(std::string arg);
+
+    std::vector<ContextNode*> getChildren();
+
+    void setArguments(std::vector<std::string> args);
+
+    void* getFrameAddress();
+    void* getReturnAddress();
+
+    void addCallCount(int val);
+
+    int getCallCount();
+
     unw_word_t getStartIP() const;
     unw_word_t getEndIP() const;
     unw_word_t getLsda() const;
     unw_word_t getHandler() const;
     unw_word_t getGlobalPointer() const;
     unw_word_t getFlags() const;
-
-    ContextNode* getParent();
-    std::vector<ContextNode*> getChildren();
-    int getCallCount();
-    bool inTree();
+    
 };
 
-#endif // CONTEXTNODE_H
+#endif

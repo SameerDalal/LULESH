@@ -1,3 +1,4 @@
+#include <Backtrace.h>
 #include <math.h>
 #if USE_MPI
 # include <mpi.h>
@@ -11,6 +12,7 @@
 #include <limits.h>
 #include <cstdlib>
 #include "lulesh.h"
+
 
 /////////////////////////////////////////////////////////////////////
 Domain::Domain(Int_t numRanks, Index_t colLoc,
@@ -687,7 +689,9 @@ void InitMeshDecomp(Int_t numRanks, Int_t myRank,
 #if USE_MPI      
       MPI_Abort(MPI_COMM_WORLD, -1) ;
 #else
+      trace_func_call("exit", 1, "int _Code: -1"); 
       exit(-1);
+      trace_func_call_end();
 #endif
    }
    if (sizeof(Real_t) != 4 && sizeof(Real_t) != 8) {
@@ -695,7 +699,9 @@ void InitMeshDecomp(Int_t numRanks, Int_t myRank,
 #if USE_MPI      
       MPI_Abort(MPI_COMM_WORLD, -1) ;
 #else
+      trace_func_call("exit", 1, "int _Code: -1"); 
       exit(-1);
+      trace_func_call_end();
 #endif
    }
    if (MAX_FIELDS_PER_MPI_COMM > CACHE_COHERENCE_PAD_REAL) {
@@ -703,7 +709,9 @@ void InitMeshDecomp(Int_t numRanks, Int_t myRank,
 #if USE_MPI      
       MPI_Abort(MPI_COMM_WORLD, -1) ;
 #else
+      trace_func_call("exit", 1, "int _Code: -1"); 
       exit(-1);
+      trace_func_call_end();
 #endif
    }
 
@@ -717,7 +725,9 @@ void InitMeshDecomp(Int_t numRanks, Int_t myRank,
 #if USE_MPI      
       MPI_Abort(MPI_COMM_WORLD, -1) ;
 #else
+      trace_func_call("exit", 1, "int _Code: -1"); 
       exit(-1);
+      trace_func_call_end();
 #endif
    }
    Int_t remainder = dx*dy*dz % numRanks ;

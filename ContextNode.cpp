@@ -2,84 +2,93 @@
 #include "ContextNode.h"
 #include <string>
 #include <vector>
+#include <libunwind.h>
 
-//private instance variables
-//each node will store the symbols function name and memory address
-ContextNode nullNode("NULL", {}, {}, {}, {}, {}, {}, {});
-
-std::string funcName;
-std::vector<std::string> parameters;
-
-unw_word_t start_ip;
-unw_word_t end_ip;
-unw_word_t lsda;
-unw_word_t handler; 
-unw_word_t global_pointer;
-unw_word_t flags;
-
-ContextNode* parent;
-std::vector<ContextNode*> children;
-int callCount;
-
-bool isInTree = false;
-
-
-ContextNode::ContextNode(std::string funcName,
-                        std::vector<std::string> parameters,
+ContextNode::ContextNode(void* frame_addr, 
+                        void* return_addr, 
+                        std::string funcName,
                         unw_word_t start_ip,
                         unw_word_t end_ip,
                         unw_word_t lsda,
                         unw_word_t handler,
                         unw_word_t global_pointer,
-                        unw_word_t flags) 
-    : funcName(funcName),
-      parameters(parameters),
-      start_ip(start_ip), 
-      end_ip(end_ip),
-      lsda(lsda),
-      handler(handler),
-      global_pointer(global_pointer),
-      flags(flags),
-      callCount(1)
-{
-
+                        unw_word_t flags,
+                        std::vector<std::string> parameters) { 
+    
+    this->frame_addr = frame_addr;
+    this->return_addr = return_addr;
+    this->start_ip = start_ip;
+    this->end_ip = end_ip;
+    this->lsda = lsda;
+    this->handler = handler;
+    this->global_pointer = global_pointer;
+    this->flags = flags;
+    this->funcName = funcName;
+    this->parameters = parameters;
+    this->arguments = {};
+    callCount = 0;
+ 
 }
 
-/*
+ContextNode::ContextNode(std::string funcName, void* return_addr) {
+    
+    this->return_addr = return_addr;
+    this->funcName = funcName;
+    this->arguments = {};
+    callCount = 0;
+}
+
 ContextNode::~ContextNode() {
-    delete nullNode;
+    //delete this;
 }
-*/
 
+void ContextNode::addChild(ContextNode* child) {
+    children.push_back(child);
+}
 
-// setters 
-void ContextNode::setChildren(ContextNode* child) {
-    if(child != nullptr) {
-        children.insert(children.end(), child);
+void ContextNode::setParentNode(ContextNode* node){
+    parent = node;
+}
+
+void ContextNode::setArguments(std::vector<std::string> args) {
+    for(auto arg : args) {
+        arguments.push_back(arg);
     }
-
 }
 
-void ContextNode::setParent(ContextNode* parent) {
-    this->parent = parent;
-}
-
-void ContextNode::setCallCount() {
-    callCount++;
-}
-
-void ContextNode::setIfInTree(bool inTree) {
-    isInTree = inTree;
-}
 
 // getters
 
-std::string ContextNode::functionName() {
+std::vector<std::string> &ContextNode::getArguments() {
+    return arguments;
+}
+
+void ContextNode::addArgument(std::string arg) {
+    arguments.push_back(arg);
+}
+
+std::string ContextNode::getFunctionName() {
     return funcName;
 };
 
-std::vector<std::string> ContextNode::getParameters() {
+ContextNode* ContextNode::getParentNode() {
+    return parent;
+}
+
+std::vector<std::string> & ContextNode::getParameters() {
     return parameters;
+}
+
+std::vector<ContextNode*> ContextNode::getChildren() {
+    return children;
+}
+
+void* ContextNode::getFrameAddress() {
+    return frame_addr;
+}
+
+void* ContextNode::getReturnAddress() {
+    return return_addr;
 }
 
 unw_word_t ContextNode::getStartIP() const {
@@ -106,29 +115,10 @@ unw_word_t ContextNode::getFlags() const {
     return flags;
 }
 
-ContextNode* ContextNode::getParent() {
-    if(parent == nullptr) {
-        return nullptr;
-    } 
-    return parent;
+void ContextNode::addCallCount(int val) {
+    callCount+=val;
 }
 
-std::vector<ContextNode*> ContextNode::getChildren() {
-    if (children.size() == 0) {
-        children.insert(children.end(), &nullNode);
-    }
-    return children;
-}
-
-int ContextNode::getCallCount(){
+int ContextNode::getCallCount(){ 
     return callCount;
 }
-
-bool ContextNode::inTree() {
-    return isInTree;
-}
-
-
-
-// This class represents each node that will be part of the tree
-// Another class should be built that takes a vector of the ContextNode and forms a tree.

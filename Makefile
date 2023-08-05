@@ -18,7 +18,9 @@ SOURCES2.0 = \
     lulesh-viz.cc \
     lulesh-util.cc \
     lulesh-init.cc \
-    ContextNode.cpp 
+	Backtrace.cpp \
+    ContextNode.cpp
+    
 OBJECTS2.0 = $(SOURCES2.0:.cc=.o)
 
 #Default build suggestions with OpenMP for g++
@@ -26,7 +28,7 @@ OBJECTS2.0 = $(SOURCES2.0:.cc=.o)
 #LDFLAGS = -g -O3 -fopenmp -lunwind -lunwind-x86_64
 
 CXXFLAGS = -g -O0 -I. -Wall
-LDFLAGS = -g -O0 -lunwind -lunwind-x86_64
+LDFLAGS = -g -DUNW_LOCAL_ONLY -O0 -lunwind -lunwind-x86_64
 
 
 #Below are reasonable default flags for a serial build

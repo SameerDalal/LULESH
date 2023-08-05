@@ -20,6 +20,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <vector>
+#include <Backtrace.h>
 
 //**************************************************
 // Allow flexibility for arithmetic representations 
@@ -221,39 +222,87 @@ class Domain {
    void AllocateGradients(Int_t numElem, Int_t allElem)
    {
       // Position gradients
+      trace_func_call("Allocate", 1, "size_t size: numElem");
       m_delx_xi   = Allocate<Real_t>(numElem) ;
+      trace_func_call_end();
+
+      trace_func_call("Allocate", 1, "size_t size: numElem");
       m_delx_eta  = Allocate<Real_t>(numElem) ;
+      trace_func_call_end();
+
+      trace_func_call("Allocate", 1, "size_t size: numElem");
       m_delx_zeta = Allocate<Real_t>(numElem) ;
+      trace_func_call_end();
 
       // Velocity gradients
+      trace_func_call("Allocate", 1, "size_t size: allElem");
       m_delv_xi   = Allocate<Real_t>(allElem) ;
+      trace_func_call_end();
+
+      trace_func_call("Allocate", 1, "size_t size: allElem");
       m_delv_eta  = Allocate<Real_t>(allElem);
+      trace_func_call_end();
+
+      trace_func_call("Allocate", 1, "size_t size: allElem");
       m_delv_zeta = Allocate<Real_t>(allElem) ;
+      trace_func_call_end();
    }
 
    void DeallocateGradients()
    {
+      trace_func_call("Release", 1, "Real_t **ptr: &m_delx_zeta"); 
       Release(&m_delx_zeta);
-      Release(&m_delx_eta) ;
-      Release(&m_delx_xi)  ;
+      trace_func_call_end();
 
+      trace_func_call("Release", 1, "Real_t **ptr: &m_delx_eta"); 
+      Release(&m_delx_eta) ;
+      trace_func_call_end();
+
+      trace_func_call("Release", 1, "Real_t **ptr: &m_delx_xi"); 
+      Release(&m_delx_xi)  ;
+      trace_func_call_end();
+      
+      trace_func_call("Release", 1, "Real_t **ptr: &m_delv_zeta"); 
       Release(&m_delv_zeta);
+      trace_func_call_end();
+
+      trace_func_call("Release", 1, "Real_t **ptr: &m_delv_eta"); 
       Release(&m_delv_eta) ;
+      trace_func_call_end();
+
+      trace_func_call("Release", 1, "Real_t **ptr: &m_delv_xi"); 
       Release(&m_delv_xi)  ;
+      trace_func_call_end();
    }
 
    void AllocateStrains(Int_t numElem)
    {
+      trace_func_call("Allocate", 1, "size_t size: numElem"); 
       m_dxx = Allocate<Real_t>(numElem) ;
+      trace_func_call_end();
+
+      trace_func_call("Allocate", 1, "size_t size: numElem"); 
       m_dyy = Allocate<Real_t>(numElem) ;
+      trace_func_call_end();
+
+      trace_func_call("Allocate", 1, "size_t size: numElem"); 
       m_dzz = Allocate<Real_t>(numElem) ;
+      trace_func_call_end();
    }
 
    void DeallocateStrains()
    {
+      trace_func_call("Release", 1, "Real_t **ptr: &m_dzz"); 
       Release(&m_dzz) ;
+      trace_func_call_end();
+
+      trace_func_call("Release", 1, "Real_t **ptr: &m_dyy"); 
       Release(&m_dyy) ;
+      trace_func_call_end();
+
+      trace_func_call("Release", 1, "Real_t **ptr: &m_dxx"); 
       Release(&m_dxx) ;
+      trace_func_call_end();
    }
    
    //
