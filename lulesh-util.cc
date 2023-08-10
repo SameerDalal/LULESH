@@ -4,7 +4,6 @@
 #include <stdio.h>
 #include <iostream>
 #include <iomanip>
-#include <Backtrace.h>
 #if USE_MPI
 #include <mpi.h>
 #endif
@@ -72,36 +71,22 @@ void ParseCommandLineOptions(int argc, char *argv[],
          /* -i <iterations> */
          if(strcmp(argv[i], "-i") == 0) {
             if (i+1 >= argc) {
-               trace_func_call("ParseError", 2,
-               "const char *message: \"Missing integer argument to -i\"", "int myRank: myRank");
                ParseError("Missing integer argument to -i", myRank);
-               trace_func_call_end();
             }
             ok = StrToInt(argv[i+1], &(opts->its));
             if(!ok) {
-               trace_func_call("ParseError", 2,
-               "const char *message: \"Parse Error on option -i integer value required after argument\\n\"", "int myRank: myRank");
                ParseError("Parse Error on option -i integer value required after argument\n", myRank);
-               trace_func_call_end();
             }
             i+=2;
          }
          /* -s <size, sidelength> */
          else if(strcmp(argv[i], "-s") == 0) {
             if (i+1 >= argc) {
-               trace_func_call("ParseError", 2,
-               "const char *message: \"Missing integer argument to -s\n\"", "int myRank: myRank");
                ParseError("Missing integer argument to -s\n", myRank);
-               trace_func_call_end();
             }
-            trace_func_call("StrToInt", 1, "const char *token: argv[i+1]", "Int_t *retVal: &(opts->nx)"); 
             ok = StrToInt(argv[i+1], &(opts->nx));
-            trace_func_call_end();
             if(!ok) {
-               trace_func_call("ParseError", 2,
-               "const char *message: \"Parse Error on option -s integer value required after argument\n\"", "int myRank: myRank");
                ParseError("Parse Error on option -s integer value required after argument\n", myRank);
-               trace_func_call_end();
             }
             i+=2;
          }
@@ -110,9 +95,7 @@ void ParseCommandLineOptions(int argc, char *argv[],
             if (i+1 >= argc) {
                ParseError("Missing integer argument to -r\n", myRank);
             }
-            trace_func_call("StrToInt", 1, "const char *token: argv[i+1]", "Int_t *retVal: &(opts->nx)"); 
             ok = StrToInt(argv[i+1], &(opts->numReg));
-            trace_func_call_end();
             if (!ok) {
                ParseError("Parse Error on option -r integer value required after argument\n", myRank);
             }
@@ -170,9 +153,7 @@ void ParseCommandLineOptions(int argc, char *argv[],
          }
          /* -h */
          else if (strcmp(argv[i], "-h") == 0) {
-            trace_func_call("PrintCommandLineOptions", 2, "char *execname: argv[0]", "int myRank: myRank");
             PrintCommandLineOptions(argv[0], myRank);
-            trace_func_call_end();
 #if USE_MPI            
             MPI_Abort(MPI_COMM_WORLD, 0);
 #else
@@ -181,14 +162,9 @@ void ParseCommandLineOptions(int argc, char *argv[],
          }
          else {
             char msg[80];
-            trace_func_call("PrintCommandLineOptions", 2, "char *execname: argv[0]", "int myRank: myRank");
             PrintCommandLineOptions(argv[0], myRank);
-            trace_func_call_end();
             sprintf(msg, "ERROR: Unknown command line argument: %s\n", argv[i]);
-            
-            trace_func_call("ParseError", 2, "const char *message: msg", "int myRank: myRank"); 
             ParseError(msg, myRank);
-            trace_func_call_end();
          }
       }
    }

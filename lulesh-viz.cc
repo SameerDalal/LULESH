@@ -430,4 +430,3 @@ void DumpToVisit(Domain& domain, int numFiles, int myRank, int numRanks)
 }
 
 #endif
-
