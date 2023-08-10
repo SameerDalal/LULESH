@@ -107,6 +107,7 @@ void trace_func_call_end() {
 void write_to_dot() {
     std::ofstream dotFileWrite("tree.dot");
     dotFileWrite << "digraph ContextTree {" << std::endl;
+    dotFileWrite << "rankdir=\"LR\"" << std::endl;
     for (auto & node : nodes) {
         //print_node_info_brief(node);
         dotFileWrite << node->getFunctionName() << node <<

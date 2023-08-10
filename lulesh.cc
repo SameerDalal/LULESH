@@ -532,17 +532,11 @@ void IntegrateStressForElems( Domain &domain,
 
 
   if (numthreads > 1) {
-      trace_func_call("Allocate", 1, "size_t size: numElem8"); 
      fx_elem = Allocate<Real_t>(numElem8) ;
-      trace_func_call_end();
 
-     trace_func_call("Allocate", 1, "size_t size: numElem8"); 
      fy_elem = Allocate<Real_t>(numElem8) ;
-      trace_func_call_end();
 
-     trace_func_call("Allocate", 1, "size_t size: numElem8"); 
      fz_elem = Allocate<Real_t>(numElem8) ;
-     trace_func_call_end();
   }
   // loop over all elements
 
@@ -618,17 +612,11 @@ void IntegrateStressForElems( Domain &domain,
         domain.fy(gnode) = fy_tmp ;
         domain.fz(gnode) = fz_tmp ;
      }
-     trace_func_call("Release", 1, "Real_t **ptr: &fz_elem"); 
      Release(&fz_elem) ;
-     trace_func_call_end();
 
-     trace_func_call("Release", 1, "Real_t **ptr: &fy_elem"); 
      Release(&fy_elem) ;
-     trace_func_call_end();
 
-     trace_func_call("Release", 1, "Real_t **ptr: &fx_elem"); 
      Release(&fx_elem) ;
-     trace_func_call_end();
   }
 }
 
@@ -838,17 +826,11 @@ void CalcFBHourglassForceForElems( Domain &domain,
    Real_t *fz_elem; 
 
    if(numthreads > 1) {
-      trace_func_call("Allocate", 1, "size_t size: numElem8"); 
       fx_elem = Allocate<Real_t>(numElem8) ;
-      trace_func_call_end();
 
-      trace_func_call("Allocate", 1, "size_t size: numElem8"); 
       fy_elem = Allocate<Real_t>(numElem8) ;
-      trace_func_call_end();
 
-      trace_func_call("Allocate", 1, "size_t size: numElem8"); 
       fz_elem = Allocate<Real_t>(numElem8) ;
-      trace_func_call_end();
    }
 
    Real_t  gamma[4][8];
@@ -1099,18 +1081,13 @@ void CalcFBHourglassForceForElems( Domain &domain,
          domain.fy(gnode) += fy_tmp ;
          domain.fz(gnode) += fz_tmp ;
       }
-      trace_func_call("Release", 1, "Real_t **ptr: &fz_elem"); 
       Release(&fz_elem) ;
-      trace_func_call_end();
 
 
-      trace_func_call("Release", 1, "Real_t **ptr: &fy_elem"); 
       Release(&fy_elem) ;
-      trace_func_call_end();
+      
 
-      trace_func_call("Release", 1, "Real_t **ptr: &fx_elem"); 
       Release(&fx_elem) ;
-      trace_func_call_end();
    }
 }
 
@@ -1124,29 +1101,17 @@ void CalcHourglassControlForElems(Domain& domain,
    Index_t numElem = domain.numElem() ;
    Index_t numElem8 = numElem * 8 ;
 
-   trace_func_call("Allocate", 1, "size_t size: numElem8");
    Real_t *dvdx = Allocate<Real_t>(numElem8) ;
-   trace_func_call_end();
 
-   trace_func_call("Allocate", 1, "size_t size: numElem8");
    Real_t *dvdy = Allocate<Real_t>(numElem8) ;
-   trace_func_call_end();
 
-   trace_func_call("Allocate", 1, "size_t size: numElem8");
    Real_t *dvdz = Allocate<Real_t>(numElem8) ;
-   trace_func_call_end();
 
-   trace_func_call("Allocate", 1, "size_t size: numElem8");
    Real_t *x8n  = Allocate<Real_t>(numElem8) ;
-   trace_func_call_end();
 
-   trace_func_call("Allocate", 1, "size_t size: numElem8");
    Real_t *y8n  = Allocate<Real_t>(numElem8) ;
-   trace_func_call_end();
 
-   trace_func_call("Allocate", 1, "size_t size: numElem8");
    Real_t *z8n  = Allocate<Real_t>(numElem8) ;
-   trace_func_call_end();
 
    /* start loop over elements */
 #pragma omp parallel for firstprivate(numElem)
@@ -1195,29 +1160,17 @@ void CalcHourglassControlForElems(Domain& domain,
                                     hgcoef, numElem, domain.numNode()) ;
       trace_func_call_end();
    }
-   trace_func_call("Release", 1, "Real_t **ptr: &z8n");
    Release(&z8n) ;
-   trace_func_call_end();
 
-   trace_func_call("Release", 1, "Real_t **ptr: &y8n");
    Release(&y8n) ;
-   trace_func_call_end();
 
-   trace_func_call("Release", 1, "Real_t **ptr: &x8n");
    Release(&x8n) ;
-   trace_func_call_end();
 
-   trace_func_call("Release", 1, "Real_t **ptr: &dvdz");
    Release(&dvdz) ;
-   trace_func_call_end();
 
-   trace_func_call("Release", 1, "Real_t **ptr: &dvdy");
    Release(&dvdy) ;
-   trace_func_call_end();
 
-   trace_func_call("Release", 1, "Real_t **ptr: &dvdx");
    Release(&dvdx) ;
-   trace_func_call_end();
 
    return ;
 }
@@ -1231,21 +1184,13 @@ void CalcVolumeForceForElems(Domain& domain)
    if (numElem != 0) {
       Real_t  hgcoef = domain.hgcoef() ;
 
-      trace_func_call("Allocate", 1, "size_t size: numElem"); 
       Real_t *sigxx  = Allocate<Real_t>(numElem) ;
-      trace_func_call_end();
 
-      trace_func_call("Allocate", 1, "size_t size: numElem"); 
       Real_t *sigyy  = Allocate<Real_t>(numElem) ;
-      trace_func_call_end();
 
-      trace_func_call("Allocate", 1, "size_t size: numElem"); 
       Real_t *sigzz  = Allocate<Real_t>(numElem) ;
-      trace_func_call_end();
 
-      trace_func_call("Allocate", 1, "size_t size: numElem"); 
       Real_t *determ = Allocate<Real_t>(numElem) ;
-      trace_func_call_end();
 
       /* Sum contributions to total stress tensor */
       trace_func_call("InitStressTermsForElems", 5, "Domain &domain: domain", "Real_t *sigxx: sigxx", "Real_t *sigyy: sigyy", "Real_t *sigzz: sigzz", "Index_t numElem: numElem"); 
@@ -1275,21 +1220,13 @@ void CalcVolumeForceForElems(Domain& domain)
       CalcHourglassControlForElems(domain, determ, hgcoef) ;
       trace_func_call_end();
 
-      trace_func_call("Release", 1, "Real_t **ptr: &determ"); 
       Release(&determ) ;
-      trace_func_call_end();
 
-      trace_func_call("Release", 1, "Real_t **ptr: &sigzz"); 
       Release(&sigzz) ;
-      trace_func_call_end();
 
-      trace_func_call("Release", 1, "Real_t **ptr: &sigyy"); 
       Release(&sigyy) ;
-      trace_func_call_end();
 
-      trace_func_call("Release", 1, "Real_t **ptr: &sigxx"); 
       Release(&sigxx) ;
-      trace_func_call_end();
    }
 }
 
@@ -1388,24 +1325,18 @@ void CalcVelocityForNodes(Domain &domain, const Real_t dt, const Real_t u_cut,
 
      xdtmp = domain.xd(i) + domain.xdd(i) * dt ;
 
-     trace_func_call("FABS", 1, "real8 arg: xdtmp"); 
      if( FABS(xdtmp) < u_cut ) xdtmp = Real_t(0.0);
-     trace_func_call_end();
      domain.xd(i) = xdtmp ;
 
      ydtmp = domain.yd(i) + domain.ydd(i) * dt ;
 
-     trace_func_call("FABS", 1, "real8 arg: ydtmp"); 
      if( FABS(ydtmp) < u_cut ) ydtmp = Real_t(0.0);
-     trace_func_call_end();
      domain.yd(i) = ydtmp ;
      
 
      zdtmp = domain.zd(i) + domain.zdd(i) * dt ;
 
-     trace_func_call("FABS", 1, "real8 arg: zdtmp"); 
      if( FABS(zdtmp) < u_cut ) zdtmp = Real_t(0.0);
-     trace_func_call_end();
      domain.zd(i) = zdtmp ;
    }
 }
@@ -1579,6 +1510,7 @@ Real_t CalcElemVolume( const Real_t x0, const Real_t x1,
 //inline
 Real_t CalcElemVolume( const Real_t x[8], const Real_t y[8], const Real_t z[8] )
 {
+      /*
       trace_func_call("CalcElemVolume", 24,
             "Real_t x0: x[0]", "Real_t x1: x[1]", "Real_t x2: x[2]", "Real_t x3: x[3]",
             "Real_t x4: x[4]", "Real_t x5: x[5]", "Real_t x6: x[6]", "Real_t x7: x[7]",
@@ -1586,10 +1518,13 @@ Real_t CalcElemVolume( const Real_t x[8], const Real_t y[8], const Real_t z[8] )
             "Real_t y4: y[4]", "Real_t y5: y[5]", "Real_t y6: y[6]", "Real_t y7: y[7]",
             "Real_t z0: z[0]", "Real_t z1: z[1]", "Real_t z2: z[2]", "Real_t z3: z[3]",
             "Real_t z4: z[4]", "Real_t z5: z[5]", "Real_t z6: z[6]", "Real_t z7: z[7]");
-      trace_func_call_end();
-return CalcElemVolume( x[0], x[1], x[2], x[3], x[4], x[5], x[6], x[7],
+      */
+      Real_t returnVal = CalcElemVolume( x[0], x[1], x[2], x[3], x[4], x[5], x[6], x[7],
                        y[0], y[1], y[2], y[3], y[4], y[5], y[6], y[7],
                        z[0], z[1], z[2], z[3], z[4], z[5], z[6], z[7]);
+      //trace_func_call_end();
+      
+return returnVal;
 }
 
 /******************************************/
@@ -1687,9 +1622,7 @@ Real_t CalcElemCharacteristicLength( const Real_t x[8],
    
    charLength = std::max(a,charLength) ;
 
-   trace_func_call("SQRT", 1, "real8 arg: charLength");
    charLength = Real_t(4.0) * volume / SQRT(charLength);
-   trace_func_call_end();
 
    return charLength;
 }
@@ -1855,9 +1788,7 @@ void CalcLagrangeElements(Domain& domain)
    if (numElem > 0) {
       const Real_t deltatime = domain.deltatime() ;
 
-      trace_func_call("AllocateStrains", 1, "Int_t numElem: numElem"); 
       domain.AllocateStrains(numElem);
-      trace_func_call_end();
 
       trace_func_call("CalcKinematicsForElems", 3, "Domain &domain: domain", "Real_t deltaTime: deltaTime", "Index_t numElem: numElem"); 
       CalcKinematicsForElems(domain, deltatime, numElem) ;
@@ -1887,9 +1818,7 @@ void CalcLagrangeElements(Domain& domain)
 #endif
         }
       }
-      trace_func_call("DeallocateStrains", 0); 
       domain.DeallocateStrains();
-      trace_func_call_end();
    }
 }
 
@@ -1991,9 +1920,7 @@ void CalcMonotonicQGradientsForElems(Domain& domain)
       ay = dzi*dxj - dxi*dzj ;
       az = dxi*dyj - dyi*dxj ;
 
-      trace_func_call("SQRT", 1, "real8 arg: ax*ax + ay*ay + az*az + ptiny");
       domain.delx_zeta(i) = vol / SQRT(ax*ax + ay*ay + az*az + ptiny) ; 
-      trace_func_call_end();
 
       ax *= norm ;
       ay *= norm ;
@@ -2011,9 +1938,7 @@ void CalcMonotonicQGradientsForElems(Domain& domain)
       ay = dzj*dxk - dxj*dzk ;
       az = dxj*dyk - dyj*dxk ;
 
-      trace_func_call("SQRT", 1, "real8 arg: ax*ax + ay*ay + az*az + ptiny");
       domain.delx_xi(i) = vol / SQRT(ax*ax + ay*ay + az*az + ptiny) ;
-      trace_func_call_end();
 
       ax *= norm ;
       ay *= norm ;
@@ -2031,9 +1956,7 @@ void CalcMonotonicQGradientsForElems(Domain& domain)
       ay = dzk*dxi - dxk*dzi ;
       az = dxk*dyi - dyk*dxi ;
 
-      trace_func_call("SQRT", 1, "real8 arg: ax*ax + ay*ay + az*az + ptiny"); 
       domain.delx_eta(i) = vol / SQRT(ax*ax + ay*ay + az*az + ptiny) ;
-      trace_func_call_end();
 
       ax *= norm ;
       ay *= norm ;
@@ -2250,9 +2173,7 @@ void CalcQForElems(Domain& domain)
             2*domain.sizeX()*domain.sizeZ() + /* row ghosts */
             2*domain.sizeY()*domain.sizeZ() ; /* col ghosts */
 
-      trace_func_call("AllocateGradients", 2, "Int_t numElem: numElem", "Int_t allElem: allElem"); 
       domain.AllocateGradients(numElem, allElem);
-      trace_func_call_end();
 
 #if USE_MPI      
       CommRecv(domain, MSG_MONOQ, 3,
@@ -2287,9 +2208,7 @@ void CalcQForElems(Domain& domain)
       trace_func_call_end();
 
       // Free up memory
-      trace_func_call("DeallocateGradients", 0); 
       domain.DeallocateGradients();
-      trace_func_call_end();
 
       /* Don't allow excessive artificial viscosity */
       Index_t idx = -1; 
@@ -2336,10 +2255,8 @@ void CalcPressureForElems(Real_t* p_new, Real_t* bvc,
       
       p_new[i] = bvc[i] * e_old[i] ;
 
-      trace_func_call("FABS", 1, "real8 arg: p_new[i]");
       if    (FABS(p_new[i]) <  p_cut   )
          p_new[i] = Real_t(0.0) ;
-      trace_func_call_end();
 
       if    ( vnewc[ielem] >= eosvmax ) /* impossible condition here? */
          p_new[i] = Real_t(0.0) ;
@@ -2363,9 +2280,7 @@ void CalcEnergyForElems(Real_t* p_new, Real_t* e_new, Real_t* q_new,
                         Real_t eosvmax,
                         Index_t length, Index_t *regElemList)
 {
-   trace_func_call("Allocate", 1, "size_t size: length"); 
    Real_t *pHalfStep = Allocate<Real_t>(length) ;
-   trace_func_call_end();
 
 #pragma omp parallel for firstprivate(length, emin)
    for (Index_t i = 0 ; i < length ; ++i) {
@@ -2399,9 +2314,7 @@ void CalcEnergyForElems(Real_t* p_new, Real_t* e_new, Real_t* q_new,
          if ( ssc <= Real_t(.1111111e-36) ) {
             ssc = Real_t(.3333333e-18) ;
          } else {
-            trace_func_call("SQRT", 1, "real8 arg: ssc"); 
             ssc = SQRT(ssc) ;
-            trace_func_call_end();
          }
 
          q_new[i] = (ssc*ql_old[i] + qq_old[i]) ;
@@ -2416,11 +2329,9 @@ void CalcEnergyForElems(Real_t* p_new, Real_t* e_new, Real_t* q_new,
    for (Index_t i = 0 ; i < length ; ++i) {
 
       e_new[i] += Real_t(0.5) * work[i];
-      trace_func_call("FABS", 1, "real8 arg: e_new[i]"); 
       if (FABS(e_new[i]) < e_cut) {
          e_new[i] = Real_t(0.)  ;
       }
-      trace_func_call_end();
       if (     e_new[i]  < emin ) {
          e_new[i] = emin ;
       }
@@ -2449,9 +2360,7 @@ void CalcEnergyForElems(Real_t* p_new, Real_t* e_new, Real_t* q_new,
          if ( ssc <= Real_t(.1111111e-36) ) {
             ssc = Real_t(.3333333e-18) ;
          } else {
-            trace_func_call("SQRT", 1, "real8 arg: ssc"); 
             ssc = SQRT(ssc) ;
-            trace_func_call_end();
          }
 
          q_tilde = (ssc*ql_old[i] + qq_old[i]) ;
@@ -2460,11 +2369,9 @@ void CalcEnergyForElems(Real_t* p_new, Real_t* e_new, Real_t* q_new,
       e_new[i] = e_new[i] - (  Real_t(7.0)*(p_old[i]     + q_old[i])
                                - Real_t(8.0)*(pHalfStep[i] + q_new[i])
                                + (p_new[i] + q_tilde)) * delvc[i]*sixth ;
-      trace_func_call("FABS", 1, "real8 arg: e_new[i]"); 
       if (FABS(e_new[i]) < e_cut) {
          e_new[i] = Real_t(0.)  ;
       }
-      trace_func_call_end();
       if (     e_new[i]  < emin ) {
          e_new[i] = emin ;
       }
@@ -2488,22 +2395,16 @@ void CalcEnergyForElems(Real_t* p_new, Real_t* e_new, Real_t* q_new,
          if ( ssc <= Real_t(.1111111e-36) ) {
             ssc = Real_t(.3333333e-18) ;
          } else {
-            trace_func_call("SQRT", 1, "real8 arg: ssc"); 
             ssc = SQRT(ssc) ;
-            trace_func_call_end();
          }
 
          q_new[i] = (ssc*ql_old[i] + qq_old[i]) ;
-         trace_func_call("FABS", 1, "real8 arg: q_new[i]"); 
          if (FABS(q_new[i]) < q_cut) q_new[i] = Real_t(0.) ;
-         trace_func_call_end();
       }
    }
     
  
-   trace_func_call("Release", 1, "Real_t **ptr: &pHalfStep"); 
    Release(&pHalfStep) ;
-   trace_func_call_end();
 
    return ;
 }
@@ -2526,9 +2427,7 @@ void CalcSoundSpeedForElems(Domain &domain,
          ssTmp = Real_t(.3333333e-18);
       }
       else {
-         trace_func_call("SQRT", 1, "real8 arg: ssTmp"); 
          ssTmp = SQRT(ssTmp);
-         trace_func_call_end();
       }
       domain.ss(ielem) = ssTmp ;
    }
@@ -2554,61 +2453,33 @@ void EvalEOSForElems(Domain& domain, Real_t *vnewc,
    // These temporaries will be of different size for 
    // each call (due to different sized region element
    // lists)
-   trace_func_call("Allocate", 1, "size_t size: numElemReg"); 
    Real_t *e_old = Allocate<Real_t>(numElemReg) ;
-   trace_func_call_end();
 
-   trace_func_call("Allocate", 1, "size_t size: numElemReg"); 
    Real_t *delvc = Allocate<Real_t>(numElemReg) ;
-   trace_func_call_end();
 
-   trace_func_call("Allocate", 1, "size_t size: numElemReg"); 
    Real_t *p_old = Allocate<Real_t>(numElemReg) ;
-   trace_func_call_end();
 
-   trace_func_call("Allocate", 1, "size_t size: numElemReg"); 
    Real_t *q_old = Allocate<Real_t>(numElemReg) ;
-   trace_func_call_end();
 
-   trace_func_call("Allocate", 1, "size_t size: numElemReg"); 
    Real_t *compression = Allocate<Real_t>(numElemReg) ;
-   trace_func_call_end();
 
-   trace_func_call("Allocate", 1, "size_t size: numElemReg"); 
    Real_t *compHalfStep = Allocate<Real_t>(numElemReg) ;
-   trace_func_call_end();
 
-   trace_func_call("Allocate", 1, "size_t size: numElemReg"); 
    Real_t *qq_old = Allocate<Real_t>(numElemReg) ;
-   trace_func_call_end();
 
-   trace_func_call("Allocate", 1, "size_t size: numElemReg"); 
    Real_t *ql_old = Allocate<Real_t>(numElemReg) ;
-   trace_func_call_end();
 
-   trace_func_call("Allocate", 1, "size_t size: numElemReg"); 
    Real_t *work = Allocate<Real_t>(numElemReg) ;
-   trace_func_call_end();
 
-   trace_func_call("Allocate", 1, "size_t size: numElemReg"); 
    Real_t *p_new = Allocate<Real_t>(numElemReg) ;
-   trace_func_call_end();
 
-   trace_func_call("Allocate", 1, "size_t size: numElemReg"); 
    Real_t *e_new = Allocate<Real_t>(numElemReg) ;
-   trace_func_call_end();
 
-   trace_func_call("Allocate", 1, "size_t size: numElemReg"); 
    Real_t *q_new = Allocate<Real_t>(numElemReg) ;
-   trace_func_call_end();
 
-   trace_func_call("Allocate", 1, "size_t size: numElemReg"); 
    Real_t *bvc = Allocate<Real_t>(numElemReg) ;
-   trace_func_call_end();
 
-   trace_func_call("Allocate", 1, "size_t size: numElemReg"); 
    Real_t *pbvc = Allocate<Real_t>(numElemReg) ;
-   trace_func_call_end();
  
    //loop to add load imbalance based on region number 
    for(Int_t j = 0; j < rep; j++) {
@@ -2697,62 +2568,33 @@ void EvalEOSForElems(Domain& domain, Real_t *vnewc,
                           numElemReg, regElemList) ;
    trace_func_call_end();
 
-   trace_func_call("Release", 1, "Real_t **ptr: &pbvc"); 
    Release(&pbvc) ;
-   trace_func_call_end();
 
-   trace_func_call("Release", 1, "Real_t **ptr: &bvc"); 
    Release(&bvc) ;
-   trace_func_call_end();
 
-   trace_func_call("Release", 1, "Real_t **ptr: &q_new"); 
    Release(&q_new) ;
-   trace_func_call_end();
 
-   trace_func_call("Release", 1, "Real_t **ptr: &e_new"); 
    Release(&e_new) ;
-   trace_func_call_end();
 
-   trace_func_call("Release", 1, "Real_t **ptr: &p_new"); 
    Release(&p_new) ;
-   trace_func_call_end();
 
-   trace_func_call("Release", 1, "Real_t **ptr: &work"); 
    Release(&work) ;
-   trace_func_call_end();
 
-   trace_func_call("Release", 1, "Real_t **ptr: &ql_old"); 
    Release(&ql_old) ;
-   trace_func_call_end();
 
-   trace_func_call("Release", 1, "Real_t **ptr: &qq_old"); 
    Release(&qq_old) ;
-   trace_func_call_end();
 
-   trace_func_call("Release", 1, "Real_t **ptr: &compHalfStep"); 
    Release(&compHalfStep) ;
-   trace_func_call_end();
 
-   trace_func_call("Release", 1, "Real_t **ptr: &compression"); 
    Release(&compression) ;
-   trace_func_call_end();
 
-   trace_func_call("Release", 1, "Real_t **ptr: &q_old"); 
    Release(&q_old) ;
-   trace_func_call_end();
 
-   trace_func_call("Release", 1, "Real_t **ptr: &p_old"); 
    Release(&p_old) ;
-   trace_func_call_end();
 
-   trace_func_call("Release", 1, "Real_t **ptr: &delvc"); 
    Release(&delvc) ;
-   trace_func_call_end();
 
-   trace_func_call("Release", 1, "Real_t **ptr: &e_old"); 
    Release(&e_old) ;
-   trace_func_call_end();
-
 }
 
 /******************************************/
@@ -2767,9 +2609,7 @@ void ApplyMaterialPropertiesForElems(Domain& domain)
     Real_t eosvmin = domain.eosvmin() ;
     Real_t eosvmax = domain.eosvmax() ;
 
-    trace_func_call("Allocate", 1, "size_t size: numElem");
     Real_t *vnewc = Allocate<Real_t>(numElem) ;
-    trace_func_call_end();
 
 #pragma omp parallel
     {
@@ -2842,9 +2682,7 @@ void ApplyMaterialPropertiesForElems(Domain& domain)
        trace_func_call_end();
     }
 
-    trace_func_call("Release", 1, "Real_t **ptr: &vnewc");
     Release(&vnewc) ;
-    trace_func_call_end();
   }
 }
 
@@ -2858,10 +2696,8 @@ void UpdateVolumesForElems(Domain &domain,
 #pragma omp parallel for firstprivate(length, v_cut)
       for(Index_t i=0 ; i<length ; ++i) {
          Real_t tmpV = domain.vnew(i) ;
-         trace_func_call("FABS", 1, "real8 arg: tmpV - Real_t(1.0)"); 
          if ( FABS(tmpV - Real_t(1.0)) < v_cut )
             tmpV = Real_t(1.0) ;
-         trace_func_call_end();
          domain.v(i) = tmpV ;
       }
    }
@@ -2933,9 +2769,7 @@ void CalcCourantConstraintForElems(Domain &domain, Index_t length,
                 + qqc2 * domain.arealg(indx) * domain.arealg(indx)
                 * domain.vdov(indx) * domain.vdov(indx) ;
          }
-         trace_func_call("SQRT", 1, "real8 arg: dtf"); 
          dtf = SQRT(dtf) ;
-         trace_func_call_end();
          dtf = domain.arealg(indx) / dtf ;
 
          if (domain.vdov(indx) != Real_t(0.)) {
@@ -2997,9 +2831,7 @@ void CalcHydroConstraintForElems(Domain &domain, Index_t length,
          Index_t indx = regElemlist[i] ;
 
          if (domain.vdov(indx) != Real_t(0.)) {
-            trace_func_call("FABS", 1, "real8 arg: domain.vdov(indx))+Real_t(1.e-20)"); 
             Real_t dtdvov = dvovmax / (FABS(domain.vdov(indx))+Real_t(1.e-20)) ;
-            trace_func_call_end();
 
             if ( dthydro_tmp > dtdvov ) {
                   dthydro_tmp = dtdvov ;
