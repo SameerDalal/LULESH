@@ -662,94 +662,111 @@ void CalcElemVolumeDerivative(Real_t dvdx[8],
                               const Real_t y[8],
                               const Real_t z[8])
 {
+   /*
   trace_func_call("VoluDer", 18,
                "Real_t x0: x[1]", "Real_t x1: x[2]", "Real_t x2: x[3]", "Real_t x3: x[4]", "Real_t x4: x[5]", "Real_t x5: x[7]",
                "Real_t y0: y[1]", "Real_t y1: y[2]", "Real_t y2: y[3]", "Real_t y3: y[4]", "Real_t y4: y[5]", "Real_t y5: y[7]",
                "Real_t z0: z[1]", "Real_t z1: z[2]", "Real_t z2: z[3]", "Real_t z3: z[4]", "Real_t z4: z[5]", "Real_t z5: z[7]",
                "Real_t *dvd: &dvdx[0]", "Real_t *dvdy: &dvdy[0]", "Real_t *dvdz: &dvdz[0]");
+   */
 VoluDer(x[1], x[2], x[3], x[4], x[5], x[7],
         y[1], y[2], y[3], y[4], y[5], y[7],
         z[1], z[2], z[3], z[4], z[5], z[7],
         &dvdx[0], &dvdy[0], &dvdz[0]);
-trace_func_call_end();
+//trace_func_call_end();
 
-
+   /*
    trace_func_call("VoluDer", 18,
                "Real_t x0: x[0]", "Real_t x1: x[1]", "Real_t x2: x[2]", "Real_t x3: x[7]", "Real_t x4: x[4]", "Real_t x5: x[6]",
                "Real_t y0: y[0]", "Real_t y1: y[1]", "Real_t y2: y[2]", "Real_t y3: y[7]", "Real_t y4: y[4]", "Real_t y5: y[6]",
                "Real_t z0: z[0]", "Real_t z1: z[1]", "Real_t z2: z[2]", "Real_t z3: z[7]", "Real_t z4: z[4]", "Real_t z5: z[6]",
                "Real_t *dvd: &dvdx[3]", "Real_t *dvdy: &dvdy[3]", "Real_t *dvdz: &dvdz[3]");
+   */
 VoluDer(x[0], x[1], x[2], x[7], x[4], x[6],
         y[0], y[1], y[2], y[7], y[4], y[6],
         z[0], z[1], z[2], z[7], z[4], z[6],
         &dvdx[3], &dvdy[3], &dvdz[3]);
-trace_func_call_end();
+//trace_func_call_end();
 
+/*
 trace_func_call("VoluDer", 18,
                "Real_t x0: x[3]", "Real_t x1: x[0]", "Real_t x2: x[1]", "Real_t x3: x[6]", "Real_t x4: x[7]", "Real_t x5: x[5]",
                "Real_t y0: y[3]", "Real_t y1: y[0]", "Real_t y2: y[1]", "Real_t y3: y[6]", "Real_t y4: y[7]", "Real_t y5: y[5]",
                "Real_t z0: z[3]", "Real_t z1: z[0]", "Real_t z2: z[1]", "Real_t z3: z[6]", "Real_t z4: z[7]", "Real_t z5: z[5]",
                "Real_t *dvd: &dvdx[2]", "Real_t *dvdy: &dvdy[2]", "Real_t *dvdz: &dvdz[2]");
+*/
 VoluDer(x[3], x[0], x[1], x[6], x[7], x[5],
         y[3], y[0], y[1], y[6], y[7], y[5],
         z[3], z[0], z[1], z[6], z[7], z[5],
         &dvdx[2], &dvdy[2], &dvdz[2]);
-trace_func_call_end();
+//trace_func_call_end();
 
+/*
 trace_func_call("VoluDer", 18,
                "Real_t x0: x[2]", "Real_t x1: x[3]", "Real_t x2: x[0]", "Real_t x3: x[5]", "Real_t x4: x[6]", "Real_t x5: x[4]",
                "Real_t y0: y[2]", "Real_t y1: y[3]", "Real_t y2: y[0]", "Real_t y3: y[5]", "Real_t y4: y[6]", "Real_t y5: y[4]",
                "Real_t z0: z[2]", "Real_t z1: z[3]", "Real_t z2: z[0]", "Real_t z3: z[5]", "Real_t z4: z[6]", "Real_t z5: z[4]",
                "Real_t *dvd: &dvdx[1]", "Real_t *dvdy: &dvdy[1]", "Real_t *dvdz: &dvdz[1]");
+*/
 VoluDer(x[2], x[3], x[0], x[5], x[6], x[4],
         y[2], y[3], y[0], y[5], y[6], y[4],
         z[2], z[3], z[0], z[5], z[6], z[4],
         &dvdx[1], &dvdy[1], &dvdz[1]);
-trace_func_call_end();
+//trace_func_call_end();
 
+/*
 trace_func_call("VoluDer", 18,
                "Real_t x0: x[7]", "Real_t x1: x[6]", "Real_t x2: x[5]", "Real_t x3: x[0]", "Real_t x4: x[3]", "Real_t x5: x[1]",
                "Real_t y0: y[7]", "Real_t y1: y[6]", "Real_t y2: y[5]", "Real_t y3: y[0]", "Real_t y4: y[3]", "Real_t y5: y[1]",
                "Real_t z0: z[7]", "Real_t z1: z[6]", "Real_t z2: z[5]", "Real_t z3: z[0]", "Real_t z4: z[3]", "Real_t z5: z[1]",
                "Real_t *dvd: &dvdx[4]", "Real_t *dvdy: &dvdy[4]", "Real_t *dvdz: &dvdz[4]");
+*/
 VoluDer(x[7], x[6], x[5], x[0], x[3], x[1],
         y[7], y[6], y[5], y[0], y[3], y[1],
         z[7], z[6], z[5], z[0], z[3], z[1],
         &dvdx[4], &dvdy[4], &dvdz[4]);
-trace_func_call_end();
+//trace_func_call_end();
 
+/*
 trace_func_call("VoluDer", 18,
                "Real_t x0: x[4]", "Real_t x1: x[7]", "Real_t x2: x[6]", "Real_t x3: x[1]", "Real_t x4: x[0]", "Real_t x5: x[2]",
                "Real_t y0: y[4]", "Real_t y1: y[7]", "Real_t y2: y[6]", "Real_t y3: y[1]", "Real_t y4: y[0]", "Real_t y5: y[2]",
                "Real_t z0: z[4]", "Real_t z1: z[7]", "Real_t z2: z[6]", "Real_t z3: z[1]", "Real_t z4: z[0]", "Real_t z5: z[2]",
                "Real_t *dvd: &dvdx[5]", "Real_t *dvdy: &dvdy[5]", "Real_t *dvdz: &dvdz[5]");
+*/
 VoluDer(x[4], x[7], x[6], x[1], x[0], x[2],
         y[4], y[7], y[6], y[1], y[0], y[2],
         z[4], z[7], z[6], z[1], z[0], z[2],
         &dvdx[5], &dvdy[5], &dvdz[5]);
-trace_func_call_end();
+//trace_func_call_end();
 
+/*
 trace_func_call("VoluDer", 18,
                "Real_t x0: x[5]", "Real_t x1: x[4]", "Real_t x2: x[7]", "Real_t x3: x[2]", "Real_t x4: x[1]", "Real_t x5: x[3]",
                "Real_t y0: y[5]", "Real_t y1: y[4]", "Real_t y2: y[7]", "Real_t y3: y[2]", "Real_t y4: y[1]", "Real_t y5: y[3]",
                "Real_t z0: z[5]", "Real_t z1: z[4]", "Real_t z2: z[7]", "Real_t z3: z[2]", "Real_t z4: z[1]", "Real_t z5: z[3]",
                "Real_t *dvd: &dvdx[6]", "Real_t *dvdy: &dvdy[6]", "Real_t *dvdz: &dvdz[6]");
+*/
+
 VoluDer(x[5], x[4], x[7], x[2], x[1], x[3],
         y[5], y[4], y[7], y[2], y[1], y[3],
         z[5], z[4], z[7], z[2], z[1], z[3],
         &dvdx[6], &dvdy[6], &dvdz[6]);
-trace_func_call_end();
+//trace_func_call_end();
 
+
+/*
 trace_func_call("VoluDer", 18,
                "Real_t x0: x[6]", "Real_t x1: x[5]", "Real_t x2: x[4]", "Real_t x3: x[3]", "Real_t x4: x[2]", "Real_t x5: x[0]",
                "Real_t y0: y[6]", "Real_t y1: y[5]", "Real_t y2: y[4]", "Real_t y3: y[3]", "Real_t y4: y[2]", "Real_t y5: y[0]",
                "Real_t z0: z[6]", "Real_t z1: z[5]", "Real_t z2: z[4]", "Real_t z3: z[3]", "Real_t z4: z[2]", "Real_t z5: z[0]",
                "Real_t *dvd: &dvdx[7]", "Real_t *dvdy: &dvdy[7]", "Real_t *dvdz: &dvdz[7]");
+*/
 VoluDer(x[6], x[5], x[4], x[3], x[2], x[0],
         y[6], y[5], y[4], y[3], y[2], y[0],
         z[6], z[5], z[4], z[3], z[2], z[0],
         &dvdx[7], &dvdy[7], &dvdz[7]);
-trace_func_call_end();
+//trace_func_call_end();
 
 }
 
@@ -1560,65 +1577,75 @@ Real_t CalcElemCharacteristicLength( const Real_t x[8],
                                      const Real_t volume)
 {
    Real_t a, charLength = Real_t(0.0);
+   /*
    trace_func_call("AreaFace", 12,
                "Real_t x0: x[0]", "Real_t x1: x[1]", "Real_t x2: x[2]", "Real_t x3: x[3]",
                "Real_t y0: y[0]", "Real_t y1: y[1]", "Real_t y2: y[2]", "Real_t y3: y[3]",
                "Real_t z0: z[0]", "Real_t z1: z[1]", "Real_t z2: z[2]", "Real_t z3: z[3]");
-
+   */
    a = AreaFace(x[0],x[1],x[2],x[3],
                 y[0],y[1],y[2],y[3],
                 z[0],z[1],z[2],z[3]) ;
-   trace_func_call_end();
+   //trace_func_call_end();
    charLength = std::max(a,charLength) ;
-
+   /*
    trace_func_call("AreaFace", 12,
                "Real_t x0: x[4]", "Real_t x1: x[5]", "Real_t x2: x[6]", "Real_t x3: x[7]",
                "Real_t y0: y[4]", "Real_t y1: y[5]", "Real_t y2: y[6]", "Real_t y3: y[7]",
                "Real_t z0: z[4]", "Real_t z1: z[5]", "Real_t z2: z[6]", "Real_t z3: z[7]");
+   */
    a = AreaFace(x[4],x[5],x[6],x[7],
                 y[4],y[5],y[6],y[7],
                 z[4],z[5],z[6],z[7]) ;
-   trace_func_call_end();
+   //trace_func_call_end();
    charLength = std::max(a,charLength) ;
 
+   /*
    trace_func_call("AreaFace", 12,
                "Real_t x0: x[0]", "Real_t x1: x[1]", "Real_t x2: x[5]", "Real_t x3: x[4]",
                "Real_t y0: y[0]", "Real_t y1: y[1]", "Real_t y2: y[5]", "Real_t y3: y[4]",
                "Real_t z0: z[0]", "Real_t z1: z[1]", "Real_t z2: z[5]", "Real_t z3: z[4]");
+   */
    a = AreaFace(x[0],x[1],x[5],x[4],
                 y[0],y[1],y[5],y[4],
                 z[0],z[1],z[5],z[4]) ;
-   trace_func_call_end();
+   //trace_func_call_end();
    charLength = std::max(a,charLength) ;
 
+   /*
    trace_func_call("AreaFace", 12,
                "Real_t x0: x[1]", "Real_t x1: x[2]", "Real_t x2: x[6]", "Real_t x3: x[5]",
                "Real_t y0: y[1]", "Real_t y1: y[2]", "Real_t y2: y[6]", "Real_t y3: y[5]",
                "Real_t z0: z[1]", "Real_t z1: z[2]", "Real_t z2: z[6]", "Real_t z3: z[5]");
+   */
    a = AreaFace(x[1],x[2],x[6],x[5],
                 y[1],y[2],y[6],y[5],
                 z[1],z[2],z[6],z[5]) ;
-   trace_func_call_end();
+   //trace_func_call_end();
    charLength = std::max(a,charLength) ;
 
+   /*
    trace_func_call("AreaFace", 12,
                "Real_t x0: x[2]", "Real_t x1: x[3]", "Real_t x2: x[7]", "Real_t x3: x[6]",
                "Real_t y0: y[2]", "Real_t y1: y[3]", "Real_t y2: y[7]", "Real_t y3: y[6]",
                "Real_t z0: z[2]", "Real_t z1: z[3]", "Real_t z2: z[7]", "Real_t z3: z[6]");
+   */
    a = AreaFace(x[2],x[3],x[7],x[6],
                 y[2],y[3],y[7],y[6],
                 z[2],z[3],z[7],z[6]) ;
-   trace_func_call_end();
+   //trace_func_call_end();
    charLength = std::max(a,charLength) ;
 
+   /*
    trace_func_call("AreaFace", 12,
                "Real_t x0: x[3]", "Real_t x1: x[0]", "Real_t x2: x[4]", "Real_t x3: x[7]",
                "Real_t y0: y[3]", "Real_t y1: y[0]", "Real_t y2: y[4]", "Real_t y3: y[7]",
                "Real_t z0: z[3]", "Real_t z1: z[0]", "Real_t z2: z[4]", "Real_t z3: z[7]");
+   */
    a = AreaFace(x[3],x[0],x[4],x[7],
                 y[3],y[0],y[4],y[7],
                 z[3],z[0],z[4],z[7]) ;
-   trace_func_call_end();
+   //trace_func_call_end();
    
    charLength = std::max(a,charLength) ;
 
