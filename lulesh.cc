@@ -2796,7 +2796,7 @@ int main(int argc, char *argv[])
 //debug to see region sizes
 //   for(Int_t i = 0; i < locDom->numReg(); i++)
 //      std::cout << "region" << i + 1<< "size" << locDom->regElemSize(i) <<std::endl;
-
+   long count = 0;
    while((locDom->time() < locDom->stoptime()) && (locDom->cycle() < opts.its)) {
 
       TimeIncrement(*locDom) ;
@@ -2809,6 +2809,8 @@ int main(int argc, char *argv[])
                    << "dt="     << double(locDom->deltatime()) << "\n";
          std::cout.unsetf(std::ios_base::floatfield);
       }
+      std::cout << count << std::endl;
+      count++;
    }
 
    // Use reduced max elapsed time
@@ -2843,6 +2845,6 @@ int main(int argc, char *argv[])
    MPI_Finalize() ;
 #endif
    finalize();
-   std::cout << "FInalize Called" << std::endl;
+   std::cout << "Finalize Called" << std::endl;
    return 0 ;
 }

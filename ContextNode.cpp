@@ -115,10 +115,10 @@ unw_word_t ContextNode::getFlags() const {
     return flags;
 }
 
-void ContextNode::addCallCount(int val) {
+void ContextNode::addCallCount(long val) {
     callCount+=val;
 }
 
-int ContextNode::getCallCount(){ 
+long ContextNode::getCallCount(){ 
     return callCount;
 }

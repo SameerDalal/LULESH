@@ -12,7 +12,7 @@ private:
     ContextNode* parent;
     std::vector<ContextNode*> children;
     void* return_addr; //this is used to uniquely identify a call location
-    int callCount;
+    long callCount;
 
     void* frame_addr;
     std::string funcName;
@@ -62,9 +62,9 @@ public:
     void* getFrameAddress();
     void* getReturnAddress();
 
-    void addCallCount(int val);
+    void addCallCount(long val);
 
-    int getCallCount();
+    long getCallCount();
 
     unw_word_t getStartIP() const;
     unw_word_t getEndIP() const;
