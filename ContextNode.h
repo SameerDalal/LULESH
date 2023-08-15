@@ -25,6 +25,8 @@ private:
     std::vector<std::string> parameters;
     std::vector<std::string> arguments;
 
+    bool parallelBlock;
+
 public:
     ContextNode(        void* frame_addr, 
                         void* return_addr, 
@@ -72,6 +74,10 @@ public:
     unw_word_t getHandler() const;
     unw_word_t getGlobalPointer() const;
     unw_word_t getFlags() const;
+
+    void setParallelBlock(bool isParallel);
+    
+    bool getParallelBlock();
     
 };
 

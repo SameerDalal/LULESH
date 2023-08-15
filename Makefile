@@ -65,3 +65,8 @@ clean:
 
 tar: clean
 	cd .. ; tar cvf lulesh-2.0.tar LULESH-2.0 ; mv lulesh-2.0.tar LULESH-2.0
+
+exe:
+	./lulesh2.0 -i 1
+dot:
+	dot -Tpng tree.dot -o tree.png

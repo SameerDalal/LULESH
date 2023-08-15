@@ -283,11 +283,12 @@ void InitStressTermsForElems(Domain &domain,
    //
    // pull in the stresses appropriate to the hydro integration
    //
-
+trace_parallel_block("lulesh_cc_InitStressTermsForElems_287", 6, "firstprivate(numElem)", "shared:sigxx", "shared:sigyy", "shared:sigzz", "shared:domain.p", "shared:domain.q");
 #pragma omp parallel for firstprivate(numElem)
    for (Index_t i = 0 ; i < numElem ; ++i){
       sigxx[i] = sigyy[i] = sigzz[i] =  - domain.p(i) - domain.q(i) ;
    }
+trace_end();
 }
 
 /******************************************/
@@ -442,7 +443,7 @@ void CalcElemNodeNormals(Real_t pfx[8],
                   &pfx[3], &pfy[3], &pfz[3],
                   x[0], y[0], z[0], x[1], y[1], z[1],
                   x[2], y[2], z[2], x[3], y[3], z[3]);
-   trace_func_call_end();
+   trace_end();
 
    /* evaluate face two: nodes 0, 4, 5, 1 */
    trace_func_call("SumElemFaceNormal", 24, "Real_t *normalX0: &pfx[0]", "Real_t *normalY0: &pfy[0]", "Real_t *normalZ: &pfz[0]", "Real_t *normalX1: &pfx[4]", "Real_t *normalY1: &pfy[4]", "Real_t *normalZ1: &pfz[4]", "Real_t *normalX2: &pfx[5]", "Real_t *normalY2: &pfy[5]", "Real_t *normalZ2: &pfz[5]", "Real_t *normalX3: &pfx[1]", "Real_t *normalY3: &pfy[1]", "Real_t *normalZ: &pfz[1]", "Real_t x0: x[0]", "Real_t y0: y[0]", "Real_t z0: z[0]", "Real_t x1: x[4]", "Real_t y1: y[4]", "Real_t z1: z[4]", "Real_t x2: x[5]", "Real_t y2: y[5]", "Real_t z2: z[5]", "Real_t x3: x[1]", "Real_t y3: y[1]", "Real_t z3: z[1]");
@@ -452,7 +453,7 @@ void CalcElemNodeNormals(Real_t pfx[8],
                   &pfx[1], &pfy[1], &pfz[1],
                   x[0], y[0], z[0], x[4], y[4], z[4],
                   x[5], y[5], z[5], x[1], y[1], z[1]);
-   trace_func_call_end();
+   trace_end();
 
    /* evaluate face three: nodes 1, 5, 6, 2 */
    trace_func_call("SumElemFaceNormal", 24, "Real_t *normalX0: &pfx[1]", "Real_t *normalY0: &pfy[1]", "Real_t *normalZ: &pfz[1]", "Real_t *normalX1: &pfx[5]", "Real_t *normalY1: &pfy[5]", "Real_t *normalZ1: &pfz[5]", "Real_t *normalX2: &pfx[6]", "Real_t *normalY2: &pfy[6]", "Real_t *normalZ2: &pfz[6]", "Real_t *normalX3: &pfx[2]", "Real_t *normalY3: &pfy[2]", "Real_t *normalZ: &pfz[2]", "Real_t x0: x[1]", "Real_t y0: y[1]", "Real_t z0: z[1]", "Real_t x1: x[5]", "Real_t y1: y[5]", "Real_t z1: z[5]", "Real_t x2: x[6]", "Real_t y2: y[6]", "Real_t z2: z[6]", "Real_t x3: x[2]", "Real_t y3: y[2]", "Real_t z3: z[2]");
@@ -462,7 +463,7 @@ void CalcElemNodeNormals(Real_t pfx[8],
                   &pfx[2], &pfy[2], &pfz[2],
                   x[1], y[1], z[1], x[5], y[5], z[5],
                   x[6], y[6], z[6], x[2], y[2], z[2]);
-   trace_func_call_end();
+   trace_end();
 
    /* evaluate face four: nodes 2, 6, 7, 3 */
    trace_func_call("SumElemFaceNormal", 24, "Real_t *normalX0: &pfx[2]", "Real_t *normalY0: &pfy[2]", "Real_t *normalZ: &pfz[2]", "Real_t *normalX1: &pfx[6]", "Real_t *normalY1: &pfy[6]", "Real_t *normalZ1: &pfz[6]", "Real_t *normalX2: &pfx[7]", "Real_t *normalY2: &pfy[7]", "Real_t *normalZ2: &pfz[7]", "Real_t *normalX3: &pfx[3]", "Real_t *normalY3: &pfy[3]", "Real_t *normalZ: &pfz[3]", "Real_t x0: x[2]", "Real_t y0: y[2]", "Real_t z0: z[2]", "Real_t x1: x[6]", "Real_t y1: y[6]", "Real_t z1: z[6]", "Real_t x2: x[7]", "Real_t y2: y[7]", "Real_t z2: z[7]", "Real_t x3: x[3]", "Real_t y3: y[3]", "Real_t z3: z[3]");
@@ -472,7 +473,7 @@ void CalcElemNodeNormals(Real_t pfx[8],
                   &pfx[3], &pfy[3], &pfz[3],
                   x[2], y[2], z[2], x[6], y[6], z[6],
                   x[7], y[7], z[7], x[3], y[3], z[3]);
-   trace_func_call_end();
+   trace_end();
    /* evaluate face five: nodes 3, 7, 4, 0 */
    trace_func_call("SumElemFaceNormal", 24, "Real_t *normalX0: &pfx[3]", "Real_t *normalY0: &pfy[3]", "Real_t *normalZ: &pfz[3]", "Real_t *normalX1: &pfx[7]", "Real_t *normalY1: &pfy[7]", "Real_t *normalZ1: &pfz[7]", "Real_t *normalX2: &pfx[4]", "Real_t *normalY2: &pfy[4]", "Real_t *normalZ2: &pfz[4]", "Real_t *normalX3: &pfx[0]", "Real_t *normalY3: &pfy[0]", "Real_t *normalZ: &pfz[0]", "Real_t x0: x[3]", "Real_t y0: y[3]", "Real_t z0: z[3]", "Real_t x1: x[7]", "Real_t y1: y[7]", "Real_t z1: z[7]", "Real_t x2: x[4]", "Real_t y2: y[4]", "Real_t z2: z[4]", "Real_t x3: x[0]", "Real_t y3: y[0]", "Real_t z3: z[0]");
    SumElemFaceNormal(&pfx[3], &pfy[3], &pfz[3],
@@ -481,7 +482,7 @@ void CalcElemNodeNormals(Real_t pfx[8],
                   &pfx[0], &pfy[0], &pfz[0],
                   x[3], y[3], z[3], x[7], y[7], z[7],
                   x[4], y[4], z[4], x[0], y[0], z[0]);
-   trace_func_call_end();
+   trace_end();
    /* evaluate face six: nodes 4, 7, 6, 5 */
    trace_func_call("SumElemFaceNormal", 24, "Real_t *normalX0: &pfx[4]", "Real_t *normalY0: &pfy[4]", "Real_t *normalZ: &pfz[4]", "Real_t *normalX1: &pfx[7]", "Real_t *normalY1: &pfy[7]", "Real_t *normalZ1: &pfz[7]", "Real_t *normalX2: &pfx[6]", "Real_t *normalY2: &pfy[6]", "Real_t *normalZ2: &pfz[6]", "Real_t *normalX3: &pfx[5]", "Real_t *normalY3: &pfy[5]", "Real_t *normalZ: &pfz[5]", "Real_t x0: x[4]", "Real_t y0: y[4]", "Real_t z0: z[4]", "Real_t x1: x[7]", "Real_t y1: y[7]", "Real_t z1: z[7]", "Real_t x2: x[6]", "Real_t y2: y[6]", "Real_t z2: z[6]", "Real_t x3: x[5]", "Real_t y3: y[5]", "Real_t z3: z[5]");
    SumElemFaceNormal(&pfx[4], &pfy[4], &pfz[4],
@@ -490,7 +491,7 @@ void CalcElemNodeNormals(Real_t pfx[8],
                   &pfx[5], &pfy[5], &pfz[5],
                   x[4], y[4], z[4], x[7], y[7], z[7],
                   x[6], y[6], z[6], x[5], y[5], z[5]);
-   trace_func_call_end();
+   trace_end();
 }
 
 /******************************************/
@@ -539,7 +540,7 @@ void IntegrateStressForElems( Domain &domain,
      fz_elem = Allocate<Real_t>(numElem8) ;
   }
   // loop over all elements
-
+trace_parallel_block("lulesh_cc_IntegrateStressForElems_522", 21, "firstprivate(numElem)", "shared:elemToNode", "shared:domain.nodelist", "shared:B", "shared:x_local", "shared:y_local", "shared:z_local", "shared:sigxx", "shared:sigyy", "shared:sigzz", "shared:fx_elem", "shared:fy_elem", "shared:fz_elem", "shared:fx_local", "shared:fy_local", "shared:fz_local", "shared:lnode", "shared:gnode", "shared:domain.fx", "shared:domain.fy", "shared:domain.fz");
 #pragma omp parallel for firstprivate(numElem)
   for( Index_t k=0 ; k<numElem ; ++k )
   {
@@ -552,18 +553,18 @@ void IntegrateStressForElems( Domain &domain,
     // get nodal coordinates from global arrays and copy into local arrays.
     trace_func_call("CollectDomainNodesToElemNodes", 5, "Domain &domain: domain", "const Index_t *elemToNode: elemToNode", "Real_t *elem: x_local", "Real_t *elemY: y_local", "Real_t *elemZ: z_local"); 
     CollectDomainNodesToElemNodes(domain, elemToNode, x_local, y_local, z_local);
-   trace_func_call_end();
+   trace_end();
 
     // Volume calculation involves extra work for numerical consistency
     trace_func_call("CollectDomainNodesToElemNodes", 5, "const Real_t *x: x_local", "const Real_t *y: y_local", "const Real_t *z: z_local", "Real_t (*b)[8]: B", "Real_t *volume: &determ[k]"); 
     CalcElemShapeFunctionDerivatives(x_local, y_local, z_local,
                                          B, &determ[k]);
-   trace_func_call_end();
+   trace_end();
 
    trace_func_call("CalcElemNodeNormals", 6, "Real_t *pfx: B[0]", "Real_t *pfy: B[1]", "Real_t *pfz: B[2]", "const Real_t *x: x_local", "const Real_t *y: y_local", "const Real_t *z: z_local");
     CalcElemNodeNormals( B[0] , B[1], B[2],
                           x_local, y_local, z_local );
-   trace_func_call_end();
+   trace_end();
 
     if (numthreads > 1) {
        // Eliminate thread writing conflicts at the nodes by giving
@@ -573,13 +574,13 @@ void IntegrateStressForElems( Domain &domain,
                                     &fx_elem[k*8],
                                     &fy_elem[k*8],
                                     &fz_elem[k*8] ) ;
-         trace_func_call_end();
+         trace_end();
     }
     else {
       trace_func_call("SumElemStressesToNodeForces", 7, "const Real_t (*B)[8]: B", "Real_t stress_xx: sigxx[k]", "Real_t stress_y: sigyy[k]", "Real_t stress_zz: sigzz[k]", "Real_t *fx: fx_local", "Real_t *fy: fy_local", "Real_t *fz: fz_local");
        SumElemStressesToNodeForces( B, sigxx[k], sigyy[k], sigzz[k],
                                     fx_local, fy_local, fz_local ) ;
-      trace_func_call_end();
+      trace_end();
 
        // copy nodal force contributions to global force arrray.
        for( Index_t lnode=0 ; lnode<8 ; ++lnode ) {
@@ -590,10 +591,12 @@ void IntegrateStressForElems( Domain &domain,
        }
     }
   }
+  trace_end();
 
   if (numthreads > 1) {
      // If threaded, then we need to copy the data out of the temporary
      // arrays used above into the final forces field
+trace_parallel_block("lulesh_cc_IntegrateStressForElems_568", 16, "firstprivate(numNode)", "shared:count", "shared:domain.nodeElemCount", "shared:cornerList", "shared:domain.nodeElemCornerList", "shared:fx_tmp", "shared:fy_tmp", "shared:fz_tmp", "shared:i", "shared:ielem", "shared:fx_elem", "shared:fy_elem", "shared:fz_elem", "shared:domain.fx", "shared:domain.fy", "shared:domain.fz");
 #pragma omp parallel for firstprivate(numNode)
      for( Index_t gnode=0 ; gnode<numNode ; ++gnode )
      {
@@ -612,6 +615,7 @@ void IntegrateStressForElems( Domain &domain,
         domain.fy(gnode) = fy_tmp ;
         domain.fz(gnode) = fz_tmp ;
      }
+     trace_end();
      Release(&fz_elem) ;
 
      Release(&fy_elem) ;
@@ -673,7 +677,7 @@ VoluDer(x[1], x[2], x[3], x[4], x[5], x[7],
         y[1], y[2], y[3], y[4], y[5], y[7],
         z[1], z[2], z[3], z[4], z[5], z[7],
         &dvdx[0], &dvdy[0], &dvdz[0]);
-//trace_func_call_end();
+//trace_end();
 
    /*
    trace_func_call("VoluDer", 18,
@@ -686,7 +690,7 @@ VoluDer(x[0], x[1], x[2], x[7], x[4], x[6],
         y[0], y[1], y[2], y[7], y[4], y[6],
         z[0], z[1], z[2], z[7], z[4], z[6],
         &dvdx[3], &dvdy[3], &dvdz[3]);
-//trace_func_call_end();
+//trace_end();
 
 /*
 trace_func_call("VoluDer", 18,
@@ -699,7 +703,7 @@ VoluDer(x[3], x[0], x[1], x[6], x[7], x[5],
         y[3], y[0], y[1], y[6], y[7], y[5],
         z[3], z[0], z[1], z[6], z[7], z[5],
         &dvdx[2], &dvdy[2], &dvdz[2]);
-//trace_func_call_end();
+//trace_end();
 
 /*
 trace_func_call("VoluDer", 18,
@@ -712,7 +716,7 @@ VoluDer(x[2], x[3], x[0], x[5], x[6], x[4],
         y[2], y[3], y[0], y[5], y[6], y[4],
         z[2], z[3], z[0], z[5], z[6], z[4],
         &dvdx[1], &dvdy[1], &dvdz[1]);
-//trace_func_call_end();
+//trace_end();
 
 /*
 trace_func_call("VoluDer", 18,
@@ -725,7 +729,7 @@ VoluDer(x[7], x[6], x[5], x[0], x[3], x[1],
         y[7], y[6], y[5], y[0], y[3], y[1],
         z[7], z[6], z[5], z[0], z[3], z[1],
         &dvdx[4], &dvdy[4], &dvdz[4]);
-//trace_func_call_end();
+//trace_end();
 
 /*
 trace_func_call("VoluDer", 18,
@@ -738,7 +742,7 @@ VoluDer(x[4], x[7], x[6], x[1], x[0], x[2],
         y[4], y[7], y[6], y[1], y[0], y[2],
         z[4], z[7], z[6], z[1], z[0], z[2],
         &dvdx[5], &dvdy[5], &dvdz[5]);
-//trace_func_call_end();
+//trace_end();
 
 /*
 trace_func_call("VoluDer", 18,
@@ -752,7 +756,7 @@ VoluDer(x[5], x[4], x[7], x[2], x[1], x[3],
         y[5], y[4], y[7], y[2], y[1], y[3],
         z[5], z[4], z[7], z[2], z[1], z[3],
         &dvdx[6], &dvdy[6], &dvdz[6]);
-//trace_func_call_end();
+//trace_end();
 
 
 /*
@@ -766,7 +770,7 @@ VoluDer(x[6], x[5], x[4], x[3], x[2], x[0],
         y[6], y[5], y[4], y[3], y[2], y[0],
         z[6], z[5], z[4], z[3], z[2], z[0],
         &dvdx[7], &dvdy[7], &dvdz[7]);
-//trace_func_call_end();
+//trace_end();
 
 }
 
@@ -888,7 +892,7 @@ void CalcFBHourglassForceForElems( Domain &domain,
 /*************************************************/
 /*    compute the hourglass modes */
 
-
+trace_parallel_block("lulesh_cc_CalcFBHourglassForceForElems_787", 48, "firstprivate(numElem, hourg)", "shared:i2", "shared:*fx_local", "shared:*fy_local", "shared:*fz_local", "shared:hgfx", "shared:hgfy", "shared:hgfz", "shared:coefficient", "shared:hourgam", "shared:xd1", "shared:yd1", "shared:zd1", "shared:*elemToNode", "shared:domain.nodelist", "shared:i3", "shared:volinv", "shared:determ", "shared:ss1", "shared:mass1", "shared:volume13", "shared:i1", "shared:hourmodx", "shared:gamma", "shared:x8n", "shared:hourmody", "shared:y8n", "shared:hourmodz", "shared:z8n", "shared:dvdx", "shared:dvdy", "shared:dvdz", "shared:domain.ss", "shared:domain.elemMass", "shared:n0si2", "shared:n1si2", "shared:n2si2", "shared:n3si2", "shared:n4si2", "shared:n5si2", "shared:n6si2", "shared:n7si2", "shared:fx_elem", "shared:fy_elem", "shared:fz_elem", "shared:domain.fx", "shared:domain.fy", "shared:domain.fz");
 #pragma omp parallel for firstprivate(numElem, hourg)
    for(Index_t i2=0;i2<numElem;++i2){
       Real_t *fx_local, *fy_local, *fz_local ;
@@ -1008,7 +1012,7 @@ void CalcFBHourglassForceForElems( Domain &domain,
       CalcElemFBHourglassForce(xd1,yd1,zd1,
                       hourgam,
                       coefficient, hgfx, hgfy, hgfz);
-      trace_func_call_end();
+      trace_end();
 
       // With the threaded version, we write into local arrays per elem
       // so we don't have to worry about race conditions
@@ -1077,9 +1081,11 @@ void CalcFBHourglassForceForElems( Domain &domain,
          domain.fz(n7si2) += hgfz[7];
       }
    }
+   trace_end();
 
    if (numthreads > 1) {
      // Collect the data from the local arrays into the final force arrays
+trace_parallel_block("lulesh_cc_CalcFBHourglassForceForElems_976", 17, "firstprivate(numNode)", "shared:gnode", "shared:count", "shared:domain.nodeElemCount", "shared:*cornerList", "shared:domain.nodeElemCornerList", "shared:fx_tmp", "shared:fy_tmp", "shared:fz_tmp", "shared:i", "shared:ielem", "shared:fx_elem", "shared:fy_elem", "shared:fz_elem", "shared:domain.fx", "shared:domain.fy", "shared:domain.fz");
 #pragma omp parallel for firstprivate(numNode)
       for( Index_t gnode=0 ; gnode<numNode ; ++gnode )
       {
@@ -1098,6 +1104,7 @@ void CalcFBHourglassForceForElems( Domain &domain,
          domain.fy(gnode) += fy_tmp ;
          domain.fz(gnode) += fz_tmp ;
       }
+      trace_end();
       Release(&fz_elem) ;
 
 
@@ -1131,6 +1138,7 @@ void CalcHourglassControlForElems(Domain& domain,
    Real_t *z8n  = Allocate<Real_t>(numElem8) ;
 
    /* start loop over elements */
+trace_parallel_block("lulesh_cc_CalcHourglassControlForElems_1018", 16, "firstprivate(numElem)", "shared:i", "shared:x1", "shared:y1", "shared:z1", "shared:pfx", "shared:pfy", "shared:pfz", "shared:elemToNode", "shared:domain.nodelist", "shared:domain", "shared:ii", "shared:jj", "shared:dvdx", "shared:dvdy", "shared:dvdz", "shared:x8n", "shared:y8n", "shared:z8n", "shared:determ", "shared:domain.volo", "shared:domain.v");
 #pragma omp parallel for firstprivate(numElem)
    for (Index_t i=0 ; i<numElem ; ++i){
       Real_t  x1[8],  y1[8],  z1[8] ;
@@ -1139,11 +1147,11 @@ void CalcHourglassControlForElems(Domain& domain,
       Index_t* elemToNode = domain.nodelist(i);
       trace_func_call("CollectDomainNodesToElemNodes", 5, "Domain &domain: domain", "const Index_t *elemToNode: elemToNode", "Real_t *elemX: x1", "Real_t *elemY: y1", "Real_t *elemZ: z1");
       CollectDomainNodesToElemNodes(domain, elemToNode, x1, y1, z1);
-      trace_func_call_end();
+      trace_end();
 
       trace_func_call("CalcElemVolumeDerivative", 6, "Real_t *dvdx: pfx", "Real_t *dvdy: pfy", "Real_t *dvdz: pfz", "const Real_t *x: x1", "const Real_t *y: y1", "const Real_t *z: z1");
       CalcElemVolumeDerivative(pfx, pfy, pfz, x1, y1, z1);
-      trace_func_call_end();
+      trace_end();
 
 
       /* load into temporary storage for FB Hour Glass control */
@@ -1169,13 +1177,14 @@ void CalcHourglassControlForElems(Domain& domain,
 #endif
       }
    }
+   trace_end();
 
    if ( hgcoef > Real_t(0.) ) {
       trace_func_call("CalcFBHourglassForceForElems", 11, "Domain &domain: domain", "Real_t *determ: determ", "Real_t *x8n: x8n", "Real_t *y8n: y8n", "Real_t *z8n: z8n", "Real_t *dvdx: dvdx", "Real_t *dvdy: dvdy", "Real_t *dvdz: dvdz", "Real_t hourg: hgcoef", "Index_t numElem: numElem", "Index_t numNode: domain.numNode()");
       CalcFBHourglassForceForElems( domain,
                                     determ, x8n, y8n, z8n, dvdx, dvdy, dvdz,
                                     hgcoef, numElem, domain.numNode()) ;
-      trace_func_call_end();
+      trace_end();
    }
    Release(&z8n) ;
 
@@ -1212,7 +1221,7 @@ void CalcVolumeForceForElems(Domain& domain)
       /* Sum contributions to total stress tensor */
       trace_func_call("InitStressTermsForElems", 5, "Domain &domain: domain", "Real_t *sigxx: sigxx", "Real_t *sigyy: sigyy", "Real_t *sigzz: sigzz", "Index_t numElem: numElem"); 
       InitStressTermsForElems(domain, sigxx, sigyy, sigzz, numElem);
-      trace_func_call_end();
+      trace_end();
 
       // call elemlib stress integration loop to produce nodal forces from
       // material stresses.
@@ -1220,9 +1229,10 @@ void CalcVolumeForceForElems(Domain& domain)
       IntegrateStressForElems( domain,
                                sigxx, sigyy, sigzz, determ, numElem,
                                domain.numNode()) ;
-      trace_func_call_end();
+      trace_end();
 
       // check for negative element volume
+trace_parallel_block("lulesh_cc_CalcVolumeForceForElems_1093", 2, "firstprivate(numElem)", "shared:k");
 #pragma omp parallel for firstprivate(numElem)
       for ( Index_t k=0 ; k<numElem ; ++k ) {
          if (determ[k] <= Real_t(0.0)) {
@@ -1233,9 +1243,11 @@ void CalcVolumeForceForElems(Domain& domain)
 #endif
          }
       }
+      trace_end();
+
       trace_func_call("CalcHourglassControlForElems", 3, "Domain &domain: domain", "Real_t *determ: determ", "Real_t hgcoef, hgcoef"); 
       CalcHourglassControlForElems(domain, determ, hgcoef) ;
-      trace_func_call_end();
+      trace_end();
 
       Release(&determ) ;
 
@@ -1258,18 +1270,19 @@ void CalcForceForNodes(Domain& domain)
            domain.sizeX() + 1, domain.sizeY() + 1, domain.sizeZ() + 1,
            true, false) ;
 #endif  
-
+trace_parallel_block("lulesh_cc_CalcForceForNodes_1126", 5, "firstprivate(numNode)", "shared:i", "shared:domain.fx", "shared:domain.fy", "shared:domain.fz");
 #pragma omp parallel for firstprivate(numNode)
   for (Index_t i=0; i<numNode; ++i) {
      domain.fx(i) = Real_t(0.0) ;
      domain.fy(i) = Real_t(0.0) ;
      domain.fz(i) = Real_t(0.0) ;
   }
+  trace_end();
 
   /* Calcforce calls partial, force, hourq */
    trace_func_call("CalcVolumeForceForElems", 1, "Domain &domain: domain"); 
   CalcVolumeForceForElems(domain) ;
-  trace_func_call_end();
+  trace_end();
 
 #if USE_MPI  
   Domain_member fieldData[3] ;
@@ -1289,13 +1302,14 @@ void CalcForceForNodes(Domain& domain)
 // staticinline
 void CalcAccelerationForNodes(Domain &domain, Index_t numNode)
 {
-   
+trace_parallel_block("lulesh_cc_CalcAccelerationForNodes_1157", 9, "firstprivate(numNode)", "shared:i", "shared:domain.xdd", "shared:domain.ydd", "shared:domain.zdd", "shared:domain.fx", "shared:domain.fy", "shared:domain.fz", "shared:domain.nodalMass"); 
 #pragma omp parallel for firstprivate(numNode)
    for (Index_t i = 0; i < numNode; ++i) {
       domain.xdd(i) = domain.fx(i) / domain.nodalMass(i);
       domain.ydd(i) = domain.fy(i) / domain.nodalMass(i);
       domain.zdd(i) = domain.fz(i) / domain.nodalMass(i);
    }
+   trace_end();
 }
 
 /******************************************/
@@ -1305,7 +1319,7 @@ void ApplyAccelerationBoundaryConditionsForNodes(Domain& domain)
 {
    Index_t size = domain.sizeX();
    Index_t numNodeBC = (size+1)*(size+1) ;
-
+trace_parallel_block("lulesh_cc_ApplyAccelerationBoundaryConditionsForNodes_1173", 12, "shared:domain.symmXempty()", "shared:firstprivate(numNodeBC)", "shared:i", "shared:numNodeBC", "shared:domain.xdd", "shared:domain.symmX", "shared:domain.symmYempty", "shared:domain.ydd", "shared:domain.symmY", "shared:domain.symmZempty", "shared:domain.zdd", "shared:domain.symmZ");
 #pragma omp parallel
    {
       if (!domain.symmXempty() != 0) {
@@ -1326,6 +1340,7 @@ void ApplyAccelerationBoundaryConditionsForNodes(Domain& domain)
             domain.zdd(domain.symmZ(i)) = Real_t(0.0) ;
       }
    }
+   trace_end();
 }
 
 /******************************************/
@@ -1334,7 +1349,7 @@ void ApplyAccelerationBoundaryConditionsForNodes(Domain& domain)
 void CalcVelocityForNodes(Domain &domain, const Real_t dt, const Real_t u_cut,
                           Index_t numNode)
 {
-
+trace_parallel_block("lulesh_cc_CalcVelocityForNodes_1205", 11, "firstprivate(numNode)", "shared:i", "shared:xdtmp", "shared:ydtmp", "shared:zdtmp", "shared:domain.xd", "shared:domain.xdd", "shared:domain.yd", "shared:domain.ydd", "shared:domain.zd", "shared:domain.zdd");
 #pragma omp parallel for firstprivate(numNode)
    for ( Index_t i = 0 ; i < numNode ; ++i )
    {
@@ -1356,6 +1371,7 @@ void CalcVelocityForNodes(Domain &domain, const Real_t dt, const Real_t u_cut,
      if( FABS(zdtmp) < u_cut ) zdtmp = Real_t(0.0);
      domain.zd(i) = zdtmp ;
    }
+   trace_end();
 }
 
 /******************************************/
@@ -1363,6 +1379,7 @@ void CalcVelocityForNodes(Domain &domain, const Real_t dt, const Real_t u_cut,
 // staticinline
 void CalcPositionForNodes(Domain &domain, const Real_t dt, Index_t numNode)
 {
+trace_parallel_block("lulesh_cc_CalcPositionForNodes_1230", 9, "firstprivate(numNode)", "shared:i", "shared:dt", "shared:domain.x", "shared:domain.xd", "shared:domain.y", "shared:domain.yd", "shared:domain.z", "shared:domain.zd");
 #pragma omp parallel for firstprivate(numNode)
    for ( Index_t i = 0 ; i < numNode ; ++i )
    {
@@ -1370,6 +1387,7 @@ void CalcPositionForNodes(Domain &domain, const Real_t dt, Index_t numNode)
      domain.y(i) += domain.yd(i) * dt ;
      domain.z(i) += domain.zd(i) * dt ;
    }
+   trace_end();
 }
 
 /******************************************/
@@ -1389,7 +1407,7 @@ void LagrangeNodal(Domain& domain)
    * acceleration boundary conditions. */
   trace_func_call("CalcForceForNodes", 1, "Domain &domain: domain"); 
   CalcForceForNodes(domain);
-  trace_func_call_end();
+  trace_end();
 
 #if USE_MPI  
 #ifdef SEDOV_SYNC_POS_VEL_EARLY
@@ -1401,19 +1419,19 @@ void LagrangeNodal(Domain& domain)
 
    trace_func_call("CalcAccelerationForNodes", 2, "Domain &domain: domain", "Index_t& numElem: domain.numNode()"); 
    CalcAccelerationForNodes(domain, domain.numNode());
-   trace_func_call_end();
+   trace_end();
    
    trace_func_call("ApplyAccelerationBoundaryConditionsForNodes", 1, "Domain &domain: domain"); 
    ApplyAccelerationBoundaryConditionsForNodes(domain);
-   trace_func_call_end();
+   trace_end();
 
    trace_func_call("CalcVelocityForNodes", 4, "Domain &domain: domain", "Real_t dt: delt", "Real_t u_cut: u_cut", "Index_t numNode: domain.numNode()"); 
    CalcVelocityForNodes( domain, delt, u_cut, domain.numNode()) ;
-   trace_func_call_end();
+   trace_end();
 
    trace_func_call("CalcPositionForNodes", 3, "Domain &domain: domain", "Real_t dt: delt", "Index_t numNode: domain.numNode()"); 
    CalcPositionForNodes( domain, delt, domain.numNode() );
-   trace_func_call_end();
+   trace_end();
 
 
 #if USE_MPI
@@ -1539,7 +1557,7 @@ Real_t CalcElemVolume( const Real_t x[8], const Real_t y[8], const Real_t z[8] )
       Real_t returnVal = CalcElemVolume( x[0], x[1], x[2], x[3], x[4], x[5], x[6], x[7],
                        y[0], y[1], y[2], y[3], y[4], y[5], y[6], y[7],
                        z[0], z[1], z[2], z[3], z[4], z[5], z[6], z[7]);
-      //trace_func_call_end();
+      //trace_end();
       
 return returnVal;
 }
@@ -1586,7 +1604,7 @@ Real_t CalcElemCharacteristicLength( const Real_t x[8],
    a = AreaFace(x[0],x[1],x[2],x[3],
                 y[0],y[1],y[2],y[3],
                 z[0],z[1],z[2],z[3]) ;
-   //trace_func_call_end();
+   //trace_end();
    charLength = std::max(a,charLength) ;
    /*
    trace_func_call("AreaFace", 12,
@@ -1597,7 +1615,7 @@ Real_t CalcElemCharacteristicLength( const Real_t x[8],
    a = AreaFace(x[4],x[5],x[6],x[7],
                 y[4],y[5],y[6],y[7],
                 z[4],z[5],z[6],z[7]) ;
-   //trace_func_call_end();
+   //trace_end();
    charLength = std::max(a,charLength) ;
 
    /*
@@ -1609,7 +1627,7 @@ Real_t CalcElemCharacteristicLength( const Real_t x[8],
    a = AreaFace(x[0],x[1],x[5],x[4],
                 y[0],y[1],y[5],y[4],
                 z[0],z[1],z[5],z[4]) ;
-   //trace_func_call_end();
+   //trace_end();
    charLength = std::max(a,charLength) ;
 
    /*
@@ -1621,7 +1639,7 @@ Real_t CalcElemCharacteristicLength( const Real_t x[8],
    a = AreaFace(x[1],x[2],x[6],x[5],
                 y[1],y[2],y[6],y[5],
                 z[1],z[2],z[6],z[5]) ;
-   //trace_func_call_end();
+   //trace_end();
    charLength = std::max(a,charLength) ;
 
    /*
@@ -1633,7 +1651,7 @@ Real_t CalcElemCharacteristicLength( const Real_t x[8],
    a = AreaFace(x[2],x[3],x[7],x[6],
                 y[2],y[3],y[7],y[6],
                 z[2],z[3],z[7],z[6]) ;
-   //trace_func_call_end();
+   //trace_end();
    charLength = std::max(a,charLength) ;
 
    /*
@@ -1645,7 +1663,7 @@ Real_t CalcElemCharacteristicLength( const Real_t x[8],
    a = AreaFace(x[3],x[0],x[4],x[7],
                 y[3],y[0],y[4],y[7],
                 z[3],z[0],z[4],z[7]) ;
-   //trace_func_call_end();
+   //trace_end();
    
    charLength = std::max(a,charLength) ;
 
@@ -1727,6 +1745,7 @@ void CalcKinematicsForElems( Domain &domain,
 {
 
   // loop over all elements
+trace_parallel_block("lulesh_cc_CalcKinematicsForElems_1531", 31, "firstprivate(numElem, deltaTime)", "shared:k", "shared:B", "shared:D", "shared:x_local", "shared:y_local", "shared:z_local", "shared:xd_local", "shared:yd_local", "shared:zd_local", "shared:detJ", "shared:volume", "shared:relativeVolume", "shared:elemToNode", "shared:domain.nodelist", "shared:domain", "shared:domain.volo", "shared:domain.vnew", "shared:domain.delv", "shared:domain.v", "shared:domain.arealg", "shared:lnode", "shared:gnode", "shared:domain.xd", "shared:domain.yd", "shared:domain.zd", "shared:dt2", "shared:j", "shared:domain.dxx", "shared:domain.dyy", "shared:domain.dzz");
 #pragma omp parallel for firstprivate(numElem, deltaTime)
   for( Index_t k=0 ; k<numElem ; ++k )
   {
@@ -1749,12 +1768,12 @@ void CalcKinematicsForElems( Domain &domain,
                "Domain &domain: domain", "const Index_t *elemToNode: elemToNode",
                "Real_t *elemX: x_local", "Real_t *elemY: y_local", "Real_t *elemZ: z_local");
     CollectDomainNodesToElemNodes(domain, elemToNode, x_local, y_local, z_local);
-    trace_func_call_end();
+    trace_end();
 
     // volume calculations
     trace_func_call("CalcElemVolume", 3, "const Real_t *x: x_local", "const Real_t *y: y_local", "const Real_t *z: z_local");
     volume = CalcElemVolume(x_local, y_local, z_local );
-    trace_func_call_end();
+    trace_end();
 
     relativeVolume = volume / domain.volo(k) ;
     domain.vnew(k) = relativeVolume ;
@@ -1765,7 +1784,7 @@ void CalcKinematicsForElems( Domain &domain,
                "const Real_t *x: x_local", "const Real_t *y: y_local", "const Real_t *z: z_local", "Real_t volume: volume");
     domain.arealg(k) = CalcElemCharacteristicLength(x_local, y_local, z_local,
                                              volume);
-   trace_func_call_end();
+   trace_end();
 
     // get nodal velocities from global array and copy into local arrays.
     for( Index_t lnode=0 ; lnode<8 ; ++lnode )
@@ -1789,7 +1808,7 @@ void CalcKinematicsForElems( Domain &domain,
                "Real_t (*b)[8]: B", "Real_t *volume: &detJ");
     CalcElemShapeFunctionDerivatives( x_local, y_local, z_local,
                                       B, &detJ );
-   trace_func_call_end();
+   trace_end();
 
 
    trace_func_call("CalcElemVelocityGradient", 6,
@@ -1797,13 +1816,14 @@ void CalcKinematicsForElems( Domain &domain,
             "const Real_t (*b)[8]: B", "Real_t detJ: detJ", "Real_t *d: D");
     CalcElemVelocityGradient( xd_local, yd_local, zd_local,
                                B, detJ, D );
-   trace_func_call_end();
+   trace_end();
 
     // put velocity gradient quantities into their global arrays.
     domain.dxx(k) = D[0];
     domain.dyy(k) = D[1];
     domain.dzz(k) = D[2];
   }
+  trace_end();
 }
 
 /******************************************/
@@ -1819,9 +1839,10 @@ void CalcLagrangeElements(Domain& domain)
 
       trace_func_call("CalcKinematicsForElems", 3, "Domain &domain: domain", "Real_t deltaTime: deltaTime", "Index_t numElem: numElem"); 
       CalcKinematicsForElems(domain, deltatime, numElem) ;
-      trace_func_call_end();
+      trace_end();
 
       // element loop to do some stuff not included in the elemlib function.
+trace_parallel_block("lulesh_cc_CalcLagrangeElements_1607", 9, "firstprivate(numElem)", "shared:k", "shared:vdov", "shared:domain.dxx", "shared:domain.dyy", "shared:domain.dzz", "shared:vdovthird", "shared:domain.vdov", "shared:domain.vnew");
 #pragma omp parallel for firstprivate(numElem)
       for ( Index_t k=0 ; k<numElem ; ++k )
       {
@@ -1845,6 +1866,7 @@ void CalcLagrangeElements(Domain& domain)
 #endif
         }
       }
+      trace_end();
       domain.DeallocateStrains();
    }
 }
@@ -1855,7 +1877,7 @@ void CalcLagrangeElements(Domain& domain)
 void CalcMonotonicQGradientsForElems(Domain& domain)
 {
    Index_t numElem = domain.numElem();
-
+trace_parallel_block("lulesh_cc_CalcMonotonicQGradientsForElems_1642", 60, "firstprivate(numElem)", "shared:i", "shared:ptiny", "shared:ax", "shared:ay", "shared:az", "shared:dxv", "shared:dyv", "shared:dvz", "shared:*elemToNode", "shared:domain.nodelist", "shared:n0", "shared:n1", "shared:n2", "shared:n3", "shared:n4", "shared:n5", "shared:n6", "shared:n7", "shared:x0", "shared:x1", "shared:x2", "shared:x3", "shared:x4", "shared:x5", "shared:x6", "shared:x7", "shared:domain.x", "shared:y0", "shared:y1", "shared:y2", "shared:y3", "shared:y4", "shared:y5", "shared:y6", "shared:y7", "shared:domain.y", "shared:z0", "shared:z1", "shared:z2", "shared:z3", "shared:z4", "shared:z5", "shared:z6", "shared:z7", "shared:domain.z", "shared:xv0", "shared:xv1", "shared:xv2", "shared:xv3", "shared:xv4", "shared:xv5", "shared:xv6", "shared:xv7", "shared:yv0", "shared:yv1", "shared:yv2", "shared:yv3", "shared:yv4", "shared:yv5", "shared:yv6", "shared:yv7", "shared:zv0", "shared:zv1", "shared:zv2", "shared:zv3", "shared:zv4", "shared:zv5", "shared:zv6", "shared:zv7", "shared:vol", "shared: domain.volo", "shared:domain.vnew", "shared:norm", "shared:dxj", "shared:dyj", "shared:dzj", "shared:dxi", "shared:dyi", "shared:dzi", "shared:dxk", "shared:dyk", "shared:dzk", "shared:domain.delx_zeta", "shared:domain.delv_zeta", "shared:domain.delx_xi", "shared:domain.delv_xi", "shared:domain.delx_eta", "shared:domain.delv_eta");
 #pragma omp parallel for firstprivate(numElem)
    for (Index_t i = 0 ; i < numElem ; ++i ) {
       const Real_t ptiny = Real_t(1.e-36) ;
@@ -1995,6 +2017,7 @@ void CalcMonotonicQGradientsForElems(Domain& domain)
 
       domain.delv_eta(i) = ax*dxv + ay*dyv + az*dzv ;
    }
+   trace_end();
 }
 
 /******************************************/
@@ -2008,6 +2031,7 @@ void CalcMonotonicQRegionForElems(Domain &domain, Int_t r,
    Real_t qlc_monoq = domain.qlc_monoq();
    Real_t qqc_monoq = domain.qqc_monoq();
 
+trace_parallel_block("lulesh_cc_CalcMonotonicQRegionForElems_1796", 29, "firstprivate(qlc_monoq, qqc_monoq, monoq_limiter_mult, monoq_max_slope, ptiny)", "shared:i", "shared:domain.regElemSize", "shared:ielem", "shared:domain.regElemlist", "shared:qlin", "shared:qquad", "shared:phixi", "shared:phieta", "shared:phizeta", "shared:bcMask", "shared:domain.elemBC", "shared:delvm", "shared:delvp", "shared:norm", "shared:domain.delv_xi", "shared:ptiny", "shared:domain.delv_eta", "shared:domain.delv_zeta", "shared:domain.vdov", "shared:delvxxi", "shared:delvxeta", "shared:delvxzeta", "shared:rho", "shared:domain.elemMass", "shared:domain.volo", "shared:domain.vnew", "shared:domain.qq", "shared:domain.ql");
 #pragma omp parallel for firstprivate(qlc_monoq, qqc_monoq, monoq_limiter_mult, monoq_max_slope, ptiny)
    for ( Index_t i = 0 ; i < domain.regElemSize(r); ++i ) {
       Index_t ielem = domain.regElemlist(r,i);
@@ -2159,6 +2183,7 @@ void CalcMonotonicQRegionForElems(Domain &domain, Int_t r,
       domain.qq(ielem) = qquad ;
       domain.ql(ielem) = qlin  ;
    }
+   trace_end();
 }
 
 /******************************************/
@@ -2178,7 +2203,7 @@ void CalcMonotonicQForElems(Domain& domain)
       if (domain.regElemSize(r) > 0) {
          trace_func_call("CalcMonotonicQRegionForElems", 2, "Domain &domain: domain", "Int_t r, Real_t ptiny: ptiny"); 
          CalcMonotonicQRegionForElems(domain, r, ptiny) ;
-         trace_func_call_end();
+         trace_end();
       }
    }
 }
@@ -2211,7 +2236,7 @@ void CalcQForElems(Domain& domain)
       /* Calculate velocity gradients */
       trace_func_call("CalcMonotonicQGradientsForElems", 1, "Domain &domain: domain"); 
       CalcMonotonicQGradientsForElems(domain);
-      trace_func_call_end();
+      trace_end();
 
 #if USE_MPI      
       Domain_member fieldData[3] ;
@@ -2232,7 +2257,7 @@ void CalcQForElems(Domain& domain)
 
       trace_func_call("CalcMonotonicQForElems", 1, "Domain &domain: domain"); 
       CalcMonotonicQForElems(domain);
-      trace_func_call_end();
+      trace_end();
 
       // Free up memory
       domain.DeallocateGradients();
@@ -2253,7 +2278,7 @@ void CalcQForElems(Domain& domain)
          
          trace_func_call("exit", 1, "int _Code: QStopError"); 
          exit(QStopError);
-         trace_func_call_end();
+         trace_end();
 #endif
       }
    }
@@ -2269,13 +2294,16 @@ void CalcPressureForElems(Real_t* p_new, Real_t* bvc,
                           Real_t p_cut, Real_t eosvmax,
                           Index_t length, Index_t *regElemList)
 {
+trace_parallel_block("lulesh_cc_CalcPressureForElems_2050", 6, "firstprivate(length)", "shared:i", "shared:c1s", "shared:bvc", "shared:compression", "shared:pbvc");
 #pragma omp parallel for firstprivate(length)
    for (Index_t i = 0; i < length ; ++i) {
       Real_t c1s = Real_t(2.0)/Real_t(3.0) ;
       bvc[i] = c1s * (compression[i] + Real_t(1.));
       pbvc[i] = c1s;
    }
+   trace_end();
 
+trace_parallel_block("lulesh_cc_CalcPressureForElems_2059", 9, "firstprivate(length, pmin, p_cut, eosvmax)", "shared:i", "shared:ielem", "shared:regElemList", "shared:p_new", "shared:bvc", "shared:e_old", "shared:vnewc", "shared:pmin");
 #pragma omp parallel for firstprivate(length, pmin, p_cut, eosvmax)
    for (Index_t i = 0 ; i < length ; ++i){
       Index_t ielem = regElemList[i];
@@ -2291,6 +2319,7 @@ void CalcPressureForElems(Real_t* p_new, Real_t* bvc,
       if    (p_new[i]       <  pmin)
          p_new[i]   = pmin ;
    }
+   trace_end();
 }
 
 /******************************************/
@@ -2308,7 +2337,7 @@ void CalcEnergyForElems(Real_t* p_new, Real_t* e_new, Real_t* q_new,
                         Index_t length, Index_t *regElemList)
 {
    Real_t *pHalfStep = Allocate<Real_t>(length) ;
-
+trace_parallel_block("lulesh_cc_CalcEnergyForElems_2059", 11, "firstprivate(length, emin)", "shared:i", "shared:e_new", "shared:e_old", "shared:delvc", "shared:bvc", "shared:e_old", "shared:delvc", "shared:p_old", "shared:work", "shared:emin");
 #pragma omp parallel for firstprivate(length, emin)
    for (Index_t i = 0 ; i < length ; ++i) {
       e_new[i] = e_old[i] - Real_t(0.5) * delvc[i] * (p_old[i] + q_old[i])
@@ -2318,6 +2347,7 @@ void CalcEnergyForElems(Real_t* p_new, Real_t* e_new, Real_t* q_new,
          e_new[i] = emin ;
       }
    }
+   trace_end();
 
    trace_func_call("CalcPressureForElems", 11,
                "Real_t *p_new: pHalfStep", "Real_t *bvc: bvc", "Real_t *pbvc: pbvc", "Real_t *e_old: e_new",
@@ -2325,8 +2355,9 @@ void CalcEnergyForElems(Real_t* p_new, Real_t* e_new, Real_t* q_new,
                "Real_t eosvmax: eosvmax", "Index_t length: length", "Index_t *regElemList: regElemList");
    CalcPressureForElems(pHalfStep, bvc, pbvc, e_new, compHalfStep, vnewc,
                         pmin, p_cut, eosvmax, length, regElemList);
-   trace_func_call_end();
+   trace_end();
 
+trace_parallel_block("lulesh_cc_CalcEnergyForElems_2109", 15, "firstprivate(length, rho0)", "shared:i", "shared:vhalf", "shared:compHalfStep", "shared:delvc", "shared:q_new", "shared:ssc", "shared:pbvc", "shared:e_new", "shared:bvc", "shared:pHalfStep", "shared:ql_old", "shared:qq_old", "shared:p_old", "shared:q_old");
 #pragma omp parallel for firstprivate(length, rho0)
    for (Index_t i = 0 ; i < length ; ++i) {
       Real_t vhalf = Real_t(1.) / (Real_t(1.) + compHalfStep[i]) ;
@@ -2351,7 +2382,9 @@ void CalcEnergyForElems(Real_t* p_new, Real_t* e_new, Real_t* q_new,
          * (  Real_t(3.0)*(p_old[i]     + q_old[i])
               - Real_t(4.0)*(pHalfStep[i] + q_new[i])) ;
    }
+   trace_end();
 
+trace_parallel_block("lulesh_cc_CalcEnergyForElems_2109", 6, "firstprivate(length, emin, e_cut)", "shared:i", "shared:e_new", "shared:work", "shared:e_cut", "shared:emin");
 #pragma omp parallel for firstprivate(length, emin, e_cut)
    for (Index_t i = 0 ; i < length ; ++i) {
 
@@ -2363,16 +2396,19 @@ void CalcEnergyForElems(Real_t* p_new, Real_t* e_new, Real_t* q_new,
          e_new[i] = emin ;
       }
    }
+   trace_end();
+
    trace_func_call("CalcPressureForElems", 11,
                "Real_t *p_new: p_new", "Real_t *bvc: bvc", "Real_t *pbvc: pbvc", "Real_t *e_old: e_new",
                "Real_t *compression: compression", "Real_t *vnewc: vnewc", "Real_t pmin: pmin", "Real_t p_cut: p_cut",
                "Real_t eosvmax: eosvmax", "Index_t length: length", "Index_t *regElemList: regElemList");
    CalcPressureForElems(p_new, bvc, pbvc, e_new, compression, vnewc,
                         pmin, p_cut, eosvmax, length, regElemList);
-   trace_func_call_end();
+   trace_end();
 
+trace_parallel_block("lulesh_cc_CalcEnergyForElems_2154", 22, "firstprivate(length, rho0, emin, e_cut)", "shared:i", "shared:sixth", "shared:ielem", "shared:regElemList", "shared:q_tilde", "shared:delvc", "shared:ssc", "shared:pbvc", "shared:e_new", "shared:vnewc", "shared:bvc", "shared:p_new", "shared:rho0", "shared:ql_old", "shared:qq_old", "shared:p_old", "shared:q_old", "shared:pHalfStep", "shared:q_new", "shared:e_cut", "shared:emin");
 #pragma omp parallel for firstprivate(length, rho0, emin, e_cut)
-   for (Index_t i = 0 ; i < length ; ++i){
+   for (Index_t i = 0 ; i < length ; ++i) {
       const Real_t sixth = Real_t(1.0) / Real_t(6.0) ;
       Index_t ielem = regElemList[i];
       Real_t q_tilde ;
@@ -2403,14 +2439,17 @@ void CalcEnergyForElems(Real_t* p_new, Real_t* e_new, Real_t* q_new,
          e_new[i] = emin ;
       }
    }
+   trace_end();
+
    trace_func_call("CalcPressureForElems", 11,
                "Real_t *p_new: p_new", "Real_t *bvc: bvc", "Real_t *pbvc: pbvc", "Real_t *e_old: e_new",
                "Real_t *compression: compression", "Real_t *vnewc: vnewc", "Real_t pmin: pmin", "Real_t p_cut: p_cut",
                "Real_t eosvmax: eosvmax", "Index_t length: length", "Index_t *regElemList: regElemList");
    CalcPressureForElems(p_new, bvc, pbvc, e_new, compression, vnewc,
                         pmin, p_cut, eosvmax, length, regElemList);
-   trace_func_call_end();
+   trace_end();
 
+trace_parallel_block("lulesh_cc_CalcEnergyForElems_2193", 16, "firstprivate(length, rho0, q_cut)", "shared:i", "shared:ielem", "shared:regElemList","shared:delvc", "shared:pbvc", "shared:e_new", "shared:vnewc", "shared:bvc", "shared:p_new", "shared:q_new", "shared:ql_old", "shared:qq_old", "shared:ql_old", "shared:qq_old", "shared:q_cut");
 #pragma omp parallel for firstprivate(length, rho0, q_cut)
    for (Index_t i = 0 ; i < length ; ++i){
       Index_t ielem = regElemList[i];
@@ -2429,6 +2468,7 @@ void CalcEnergyForElems(Real_t* p_new, Real_t* e_new, Real_t* q_new,
          if (FABS(q_new[i]) < q_cut) q_new[i] = Real_t(0.) ;
       }
    }
+   trace_end();
     
  
    Release(&pHalfStep) ;
@@ -2445,6 +2485,7 @@ void CalcSoundSpeedForElems(Domain &domain,
                             Real_t *bvc, Real_t ss4o3,
                             Index_t len, Index_t *regElemList)
 {
+trace_parallel_block("lulesh_cc_CalcSoundSpeedForElems_2229", 12, "firstprivate(rho0, ss4o3)", "shared:i", "shared:ielem", "shared:regElemList", "shared:ssTmp", "shared:pbvc", "shared:enewc", "shared:vnewc", "shared:bvc", "shared:pnewc", "shared:rho0", "shared:domain.ss");
 #pragma omp parallel for firstprivate(rho0, ss4o3)
    for (Index_t i = 0; i < len ; ++i) {
       Index_t ielem = regElemList[i];
@@ -2458,6 +2499,7 @@ void CalcSoundSpeedForElems(Domain &domain,
       }
       domain.ss(ielem) = ssTmp ;
    }
+   trace_end();
 }
 
 /******************************************/
@@ -2511,6 +2553,7 @@ void EvalEOSForElems(Domain& domain, Real_t *vnewc,
    //loop to add load imbalance based on region number 
    for(Int_t j = 0; j < rep; j++) {
       /* compress data, minimal set */
+trace_parallel_block("lulesh_cc_EvalEOSForElems_2284", 0);
 #pragma omp parallel
       {
 #pragma omp for nowait firstprivate(numElemReg)
@@ -2560,6 +2603,8 @@ void EvalEOSForElems(Domain& domain, Real_t *vnewc,
             work[i] = Real_t(0.) ; 
          }
       }
+      trace_end();
+
       trace_func_call("CalcEnergyForElems", 24,
                "Real_t *p_new: p_new", "Real_t *e_new: e_new", "Real_t *q_new: q_new", "Real_t *bvc: bvc",
                "Real_t *pbvc: pbvc", "Real_t *p_old: p_old", "Real_t *e_old: e_old", "Real_t *q_old: q_old",
@@ -2574,9 +2619,10 @@ void EvalEOSForElems(Domain& domain, Real_t *vnewc,
                          p_cut, e_cut, q_cut, emin,
                          qq_old, ql_old, rho0, eosvmax,
                          numElemReg, regElemList);
-      trace_func_call_end();
+      trace_end();
    }
 
+trace_parallel_block("lulesh_cc_EvalEOSForElems_2343", 10, "firstprivate(numElemReg)", "shared:i", "shared:ielem", "shared:regElemList", "shared:domain.p", "shared:domain.e", "shared:domain.q", "shared:p_new", "shared:e_new", "shared:q_new");
 #pragma omp parallel for firstprivate(numElemReg)
    for (Index_t i=0; i<numElemReg; ++i) {
       Index_t ielem = regElemList[i];
@@ -2584,6 +2630,7 @@ void EvalEOSForElems(Domain& domain, Real_t *vnewc,
       domain.e(ielem) = e_new[i] ;
       domain.q(ielem) = q_new[i] ;
    }
+   trace_end();
 
    trace_func_call("CalcSoundSpeedForElems", 10,
                "Domain &domain: domain", "Real_t *vnewc: vnewc", "Real_t rho0: rho0", "Real_t *enewc: e_new",
@@ -2593,7 +2640,7 @@ void EvalEOSForElems(Domain& domain, Real_t *vnewc,
                           vnewc, rho0, e_new, p_new,
                           pbvc, bvc, ss4o3,
                           numElemReg, regElemList) ;
-   trace_func_call_end();
+   trace_end();
 
    Release(&pbvc) ;
 
@@ -2638,6 +2685,7 @@ void ApplyMaterialPropertiesForElems(Domain& domain)
 
     Real_t *vnewc = Allocate<Real_t>(numElem) ;
 
+trace_parallel_block("lulesh_cc_ApplyMaterialPropertiesForElems_2387", 0);
 #pragma omp parallel
     {
 #pragma omp for firstprivate(numElem)
@@ -2682,11 +2730,12 @@ void ApplyMaterialPropertiesForElems(Domain& domain)
 #else
              trace_func_call("exit", 1, "int _Code: VolumeError"); 
              exit(VolumeError);
-             trace_func_call_end();
+             trace_end();
 #endif
           }
        }
     }
+    trace_end();
 
     for (Int_t r=0 ; r<domain.numReg() ; r++) {
        Index_t numElemReg = domain.regElemSize(r);
@@ -2706,7 +2755,7 @@ void ApplyMaterialPropertiesForElems(Domain& domain)
             "Domain &domain: domain", "Real_t *vnewc: vnewc", "Int_t numElemReg: numElemReg",
             "Index_t *regElemList: regElemList", "Int_t rep: rep");
        EvalEOSForElems(domain, vnewc, numElemReg, regElemList, rep);
-       trace_func_call_end();
+       trace_end();
     }
 
     Release(&vnewc) ;
@@ -2720,6 +2769,7 @@ void UpdateVolumesForElems(Domain &domain,
                            Real_t v_cut, Index_t length)
 {
    if (length != 0) {
+trace_parallel_block("lulesh_cc_UpdateVolumesForElems_2465", 5, "firstprivate(length, v_cut)", "shared:i", "shared:tmpV", "shared:domain.vnew", "shared:domain.v");
 #pragma omp parallel for firstprivate(length, v_cut)
       for(Index_t i=0 ; i<length ; ++i) {
          Real_t tmpV = domain.vnew(i) ;
@@ -2727,7 +2777,9 @@ void UpdateVolumesForElems(Domain &domain,
             tmpV = Real_t(1.0) ;
          domain.v(i) = tmpV ;
       }
+      trace_end();
    }
+   
 
    return ;
 }
@@ -2740,21 +2792,21 @@ void LagrangeElements(Domain& domain, Index_t numElem)
 
   trace_func_call("CalcLagrangeElements", 1, "Domain &domain: domain"); 
   CalcLagrangeElements(domain) ;
-  trace_func_call_end();
+  trace_end();
 
   /* Calculate Q.  (Monotonic q option requires communication) */
   trace_func_call("CalcQForElems", 1, "Domain &domain: domain"); 
   CalcQForElems(domain) ;
-  trace_func_call_end();
+  trace_end();
 
   trace_func_call("ApplyMaterialPropertiesForElems", 1, "Domain &domain: domain"); 
   ApplyMaterialPropertiesForElems(domain) ;
-  trace_func_call_end();
+  trace_end();
 
   trace_func_call("UpdateVolumesForElems", 1, "Domain &domain: domain", "Real_t v_cut: domain.v_cut()", "Index_t length: numElem"); 
   UpdateVolumesForElems(domain, 
                         domain.v_cut(), numElem) ;
-  trace_func_call_end();
+  trace_end();
 }
 
 /******************************************/
@@ -2774,6 +2826,7 @@ void CalcCourantConstraintForElems(Domain &domain, Index_t length,
    Real_t  dtcourant_per_thread[1];
 #endif
 
+trace_parallel_block("lulesh_cc_CalcCourantConstraintForElems_2513", 9, "firstprivate(length, qqc)", "shared:qqc2", "shared:dtcourant_tmp", "shared:dtcourant", "shared:courant_elem", "shared:thread_num", "shared:courant_elem", "shared:dtcourant_per_thread", "shared:courant_elem_per_thread");
 #pragma omp parallel firstprivate(length, qqc)
    {
       Real_t   qqc2 = Real_t(64.0) * qqc * qqc ;
@@ -2810,6 +2863,7 @@ void CalcCourantConstraintForElems(Domain &domain, Index_t length,
       dtcourant_per_thread[thread_num]    = dtcourant_tmp ;
       courant_elem_per_thread[thread_num] = courant_elem ;
    }
+   trace_end();
 
    for (Index_t i = 1; i < threads; ++i) {
       if (dtcourant_per_thread[i] < dtcourant_per_thread[0] ) {
@@ -2841,7 +2895,7 @@ void CalcHydroConstraintForElems(Domain &domain, Index_t length,
    Index_t hydro_elem_per_thread[1];
    Real_t  dthydro_per_thread[1];
 #endif
-
+trace_parallel_block("lulesh_cc_CalcHydroConstraintForElems_2583", 7, "firstprivate(length, dvovmax)", "shared:dthydro_tmp", "shared:dthydro", "shared:hydro_elem", "shared:thread_num", "shared:dthydro_per_thread", "shared:hydro_elem_per_thread");
 #pragma omp parallel firstprivate(length, dvovmax)
    {
       Real_t dthydro_tmp = dthydro ;
@@ -2870,6 +2924,7 @@ void CalcHydroConstraintForElems(Domain &domain, Index_t length,
       dthydro_per_thread[thread_num]    = dthydro_tmp ;
       hydro_elem_per_thread[thread_num] = hydro_elem ;
    }
+   trace_end();
 
    for (Index_t i = 1; i < threads; ++i) {
       if(dthydro_per_thread[i] < dthydro_per_thread[0]) {
@@ -2904,7 +2959,7 @@ void CalcTimeConstraintsForElems(Domain& domain) {
                                     domain.regElemlist(r),
                                     domain.qqc(),
                                     domain.dtcourant()) ;
-      trace_func_call_end();
+      trace_end();
 
       /* check hydro constraint */
       trace_func_call("CalcHydroConstraintForElems", 5,
@@ -2915,7 +2970,7 @@ void CalcTimeConstraintsForElems(Domain& domain) {
                                   domain.regElemlist(r),
                                   domain.dvovmax(),
                                   domain.dthydro()) ;
-      trace_func_call_end();
+      trace_end();
    }
 }
 
@@ -2934,7 +2989,7 @@ void LagrangeLeapFrog(Domain& domain)
 
    trace_func_call("LagrangeNodal", 1, "Domain &domain: domain"); 
    LagrangeNodal(domain);
-   trace_func_call_end();
+   trace_end();
 
 
 #ifdef SEDOV_SYNC_POS_VEL_LATE
@@ -2944,7 +2999,7 @@ void LagrangeLeapFrog(Domain& domain)
     * material states */                           //arg    /param
    trace_func_call("LagrangeElements", 2, "Domain &domain: domain", "Index_t& numElem: domain.numElem()");
    LagrangeElements(domain, domain.numElem());
-   trace_func_call_end();
+   trace_end();
 
 #if USE_MPI   
 #ifdef SEDOV_SYNC_POS_VEL_LATE
@@ -2966,7 +3021,7 @@ void LagrangeLeapFrog(Domain& domain)
 #endif   
    trace_func_call("CalcTimeConstraintsForElems", 1, "Domain &domain: domain");
    CalcTimeConstraintsForElems(domain);
-   trace_func_call_end();
+   trace_end();
 
 #if USE_MPI   
 #ifdef SEDOV_SYNC_POS_VEL_LATE
@@ -3026,7 +3081,7 @@ int main(int argc, char *argv[])
                "int argc: argc", "char **argv: argv", "Int_t myRank: myRank",
                "cmdLineOpts *opts: &opts");
    ParseCommandLineOptions(argc, argv, myRank, &opts);
-   trace_func_call_end();
+   trace_end();
 
    if ((myRank == 0) && (opts.quiet == 0)) {
       std::cout << "Running problem size " << opts.nx << "^3 per domain until completion\n";
@@ -3052,7 +3107,7 @@ int main(int argc, char *argv[])
                "Int_t *col: &col", "Int_t *row: &row",
                "Int_t *plane: &plane", "Int_t *side: &side");
    InitMeshDecomp(numRanks, myRank, &col, &row, &plane, &side);
-   trace_func_call_end();
+   trace_end();
 
    // Build the main data structure and initialize it
    locDom = new Domain(numRanks, col, row, plane, opts.nx,
@@ -3089,11 +3144,11 @@ int main(int argc, char *argv[])
    while((locDom->time() < locDom->stoptime()) && (locDom->cycle() < opts.its)) {
       trace_func_call("TimeIncrement", 1, "Domain &domain: *locDom");
       TimeIncrement(*locDom) ;
-      trace_func_call_end();
+      trace_end();
 
       trace_func_call("LagrangeLeapFrog", 1, "Domain &domain: *locDom");
       LagrangeLeapFrog(*locDom) ;
-      trace_func_call_end();
+      trace_end();
 
       if ((opts.showProg != 0) && (opts.quiet == 0) && (myRank == 0)) {
          std::cout << "cycle = " << locDom->cycle()       << ", "
@@ -3128,14 +3183,14 @@ int main(int argc, char *argv[])
       trace_func_call("DumpToVisit", 4,
                "Domain &domain: *locDom", "int numFiles: opts.numFiles", "int myRank: myRank", "int numRanks: numRanks");
       DumpToVisit(*locDom, opts.numFiles, myRank, numRanks) ;
-      trace_func_call_end();
+      trace_end();
    }
    
    if ((myRank == 0) && (opts.quiet == 0)) {
       trace_func_call("VerifyAndWriteFinalOutput", 4,
                "Real_t elapsed_time: elapsed_timeG", "Domain &locDom: *locDom", "Int_t nx: opts.nx", "Int_t numRanks: numRanks");
       VerifyAndWriteFinalOutput(elapsed_timeG, *locDom, opts.nx, numRanks);
-      trace_func_call_end();
+      trace_end();
    }
 
    delete locDom; 
@@ -3147,6 +3202,3 @@ int main(int argc, char *argv[])
    std::cout << "FInalize Called" << std::endl;
    return 0 ;
 }
-
-
-//yyan7@uncc.edu

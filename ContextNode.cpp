@@ -27,6 +27,7 @@ ContextNode::ContextNode(void* frame_addr,
     this->parameters = parameters;
     this->arguments = {};
     callCount = 0;
+    parallelBlock = false;
  
 }
 
@@ -121,4 +122,12 @@ void ContextNode::addCallCount(long val) {
 
 long ContextNode::getCallCount(){ 
     return callCount;
+}
+
+void ContextNode::setParallelBlock(bool isParallel) {
+    parallelBlock = isParallel;
+}
+
+bool ContextNode::getParallelBlock(){
+    return parallelBlock;
 }

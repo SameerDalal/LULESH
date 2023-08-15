@@ -9,5 +9,9 @@
 
 void bootstrap();
 void finalize();
+
 void trace_func_call(std::string funcName, int num_args, ...);
-void trace_func_call_end();
+
+void trace_parallel_block(std::string funcName, int num_args, ...);
+
+void trace_end();
