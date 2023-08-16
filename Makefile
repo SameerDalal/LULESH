@@ -69,4 +69,5 @@ tar: clean
 exe:
 	./lulesh2.0 -i 1
 dot:
-	dot -Tpng tree.dot -o tree.png
+	dot -Tpng tree_function.dot -o tree_function.png
+	dot -Tpng tree_parallel.dot -o tree_parallel.png

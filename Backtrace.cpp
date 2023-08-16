@@ -9,6 +9,7 @@
 #include <cstdarg>
 #include <algorithm>
 #include <cmath>
+#include <sstream>
 
 // Assigning functions to be executed before and after main()
 //void __attribute__((constructor)) bootstrap();
@@ -142,19 +143,25 @@ void trace_parallel_block(std::string funcName, int num_args, ...) {
     topNode = node;
 }
  
-
 void trace_end() {
     topNode = topNode->getParentNode();
 }
 
-
 //dump the CCT tree to dot files 
 void write_to_dot() {
-    std::ofstream dotFileWrite("tree.dot");
-    dotFileWrite << "digraph ContextTree {" << std::endl;
-    dotFileWrite << "rankdir=\"LR\"" << std::endl;
-    dotFileWrite << "node [style=\"filled\", fontname=\"Times-Roman\", fontsize=12, fillcolor=lightblue2, fontcolor=\"#000000\"];" << std::endl;
-    dotFileWrite << "edge [color=black, fontname=\"Times-Roman\", fontsize=10];" << std::endl;
+    std::ofstream functionTree("tree_function.dot");
+    std::ofstream parallelTree("tree_parallel.dot");
+
+    std::stringstream writeString;
+
+    writeString << "digraph ContextTree {" << std::endl << "rankdir=\"LR\"" << std::endl
+                << "node [style=\"filled\", fontname=\"Times-Roman\", fontsize=12, fillcolor=lightblue2, fontcolor=\"#000000\"];" 
+                << std::endl << "edge [color=black, fontname=\"Times-Roman\", fontsize=10];" << std::endl;
+    
+    functionTree << writeString.str();
+    parallelTree << writeString.str();
+
+    writeString.str("");
 
     auto getGradient = [](int value) -> std::string {
         //int red = (int)(255*(1-pow(1.0025,(-0.02*value)))); -- for general functions
@@ -164,39 +171,84 @@ void write_to_dot() {
         snprintf(hexValue, sizeof(hexValue), "#%02X%02X%02X", redRGBVal, 0, 0);
         return hexValue;
     };
+
     for (auto & node : nodes) {
-        //print_node_info_brief(node);
+        //print_node_info_brief(node);            
+        
+        writeString << node->getFunctionName() << node << "[label=\"" << node->getFunctionName() << "\\n Call Location: 0x" << std::hex << node->getReturnAddress();
+
         if(node->getParallelBlock()) {
-            dotFileWrite << node->getFunctionName() << node <<
-            "[label=\"" << node->getFunctionName() <<
-            "\\n Call Location: 0x" << std::hex << node->getReturnAddress() <<
-            "\", fillcolor=\"#90EE90\", style=filled, fontcolor=\"#770000\"];" << std::endl;
-        } else {
-            dotFileWrite << node->getFunctionName() << node <<
-            "[label=\"" << node->getFunctionName() <<
-            "\\n Call Location: 0x" << std::hex << node->getReturnAddress() <<
-            "\"];" << std::endl;
+            writeString << "\", fillcolor=\"green"; 
         }
+        writeString << "\"];" << std::endl;
+
+        parallelTree << writeString.str();
+        functionTree << writeString.str();
+
+        writeString.str("");
 
         for (auto &child  : node->getChildren()) {
             if (child->getArguments().size() == 0) {
-                dotFileWrite << node->getFunctionName() << node << " -> " << 
-                         child->getFunctionName() << child << "[label=\" "; 
-                    dotFileWrite << std::to_string(child->getCallCount()) << "x";
-                    dotFileWrite << "\", color=\"" << getGradient(child->getCallCount()) << "\"];" << std::endl;
+
+                writeString << node->getFunctionName() << node << " -> " << child->getFunctionName() 
+                            << child << "[label=\" " << std::to_string(child->getCallCount()) << "x" 
+                            << "\", color=\"" << getGradient(child->getCallCount()) << "\"];" << std::endl;
+
+                parallelTree << writeString.str();
+                functionTree << writeString.str();
+
+                writeString.str("");
+                
             } else {
                 int i = 0;
                 for(auto & param: child->getArguments()) {
-                    dotFileWrite << node->getFunctionName() << node << " -> " << 
-                         child->getFunctionName() << child << "[label=\" "; 
-                    dotFileWrite << param << "," << std::to_string(child->getCallCount()) << "x";
-                    dotFileWrite << "\", color=\"" << getGradient(child->getCallCount()) << "\"];" << std::endl;
+                    if(child->getParallelBlock()) {
+
+                        writeString << node->getFunctionName() << node << " -> " << child->getFunctionName() 
+                                    << child << "[label=\" " << std::to_string(child->getCallCount()) << "x" 
+                                    << "\", color=\"" << getGradient(child->getCallCount()) << "\"];" << std::endl;
+                        
+                        functionTree << writeString.str();
+
+                        writeString.str("");
+
+                        for(auto& param : child->getArguments()) {
+
+                            writeString << node->getFunctionName() << node << " -> " << child->getFunctionName() 
+                                        << child << "[label=\" " << param << "," << std::to_string(child->getCallCount()) 
+                                        << "x" << "\", color=\"" << getGradient(child->getCallCount()) << "\"];" << std::endl;
+
+                            parallelTree << writeString.str();
+
+                            writeString.str("");
+                        }
+                        break;
+                    } else {
+                        writeString << node->getFunctionName() << node << " -> " << child->getFunctionName() 
+                                    << child << "[label=\" " << param << "," << std::to_string(child->getCallCount()) 
+                                    << "x" << "\", color=\"" << getGradient(child->getCallCount()) << "\"];" << std::endl;
+                        
+                        functionTree << writeString.str();
+
+                        writeString.str("");
+                    }
                 }
-            } 
+                writeString << node->getFunctionName() << node << " -> " << child->getFunctionName() 
+                            << child << "[label=\" " << std::to_string(child->getCallCount()) << "x" 
+                            << "\", color=\"" << getGradient(child->getCallCount()) << "\"];" << std::endl;
+                    
+                parallelTree << writeString.str();
+
+                writeString.str("");
+            }
         }
     }
-    dotFileWrite << "}" << std::endl;
-    dotFileWrite.close();
+    
+    functionTree << "}" << std::endl;
+    functionTree.close();
+
+    parallelTree << "}" << std::endl;
+    parallelTree.close();
 }
 
 //memory cleanup for unused nodes
