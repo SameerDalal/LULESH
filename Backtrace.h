@@ -15,3 +15,8 @@ void trace_func_call(std::string funcName, int num_args, ...);
 void trace_parallel_block(std::string funcName, int num_args, ...);
 
 void trace_end();
+
+std::string generateRandomColor();
+
+
+void setColor(ContextNode* node);

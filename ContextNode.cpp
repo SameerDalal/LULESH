@@ -28,6 +28,7 @@ ContextNode::ContextNode(void* frame_addr,
     this->arguments = {};
     callCount = 0;
     parallelBlock = false;
+
  
 }
 
@@ -130,4 +131,12 @@ void ContextNode::setParallelBlock(bool isParallel) {
 
 bool ContextNode::getParallelBlock(){
     return parallelBlock;
+}
+
+std::vector<std::string> ContextNode::getColor() {
+    return color;
+}
+
+void ContextNode::setColor(std::string color){
+    this->color.push_back(color);
 }
