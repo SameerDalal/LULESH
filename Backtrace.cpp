@@ -10,11 +10,6 @@
 #include <algorithm>
 #include <cmath>
 
-#include <cstdlib>
-#include <ctime>
-#include <sstream>
-#include <iomanip>
-
 // Assigning functions to be executed before and after main()
 //void __attribute__((constructor)) bootstrap();
 //void __attribute__((destructor)) finalize();
@@ -103,47 +98,7 @@ void trace_func_call(std::string funcName, int num_args, ...) {
     nodes.push_back(node);
     //print_node_info_brief(node);
     topNode->addChild(node);
-
-    setColor(node);
-    std::cout << "Function Arg: " << node->getArguments().size() << std::endl;
-    std::cout << "Function Color: " << node->getColor().size() << std::endl;
-
     topNode = node;
-}
-
-std::string generateRandomColor() {
-    srand(time(nullptr));
-
-    unsigned int randomColor = rand() % 0xFFFFFF;
-    std::stringstream ss;
-    ss << "#" << std::hex << std::setw(6) << std::setfill('0') << randomColor;
-
-    return ss.str();
-}
-
-void setColor(ContextNode* node) {
-    srand(time(nullptr)); 
-    if(node->getParentNode()->getArguments().size() == 0 || node->getArguments().size() == 0) {
-        for(auto i : node->getArguments()) {
-            node->setColor("#000000");
-        }
-    } else {
-        for(auto param : node->getParentNode()->getArguments()) {
-            int i = 0;
-            for(auto params : node->getArguments()) {
-                if(params == param) {
-                    if(node->getParentNode()->getColor()[i] == "#000000") {
-                        node->setColor(generateRandomColor());
-                    } else {
-                        node->setColor(node->getParentNode()->getColor()[i]);
-                    }
-                } else {
-                    node->setColor("#000000");
-                }
-                i++;
-            }
-        }
-    }
 }
 
 void trace_parallel_block(std::string funcName, int num_args, ...) {
@@ -184,11 +139,6 @@ void trace_parallel_block(std::string funcName, int num_args, ...) {
     nodes.push_back(node);
     //print_node_info_brief(node);
     topNode->addChild(node);
-
-    setColor(node);
-    std::cout << "Function Arg: " << node->getArguments().size() << std::endl;
-    std::cout << "Function Color: " << node->getColor().size() << std::endl;
-
     topNode = node;
 }
  
@@ -225,17 +175,16 @@ void write_to_dot() {
                 dotFileWrite << node->getFunctionName() << node << " -> " << 
                          child->getFunctionName() << child << "[label=\" "; 
                     dotFileWrite << std::to_string(child->getCallCount()) << "x";
-                    dotFileWrite << "\", color=\"" << "#00000" << "\"];" << std::endl;
+                    dotFileWrite << "\", color=\"" << "black" << "\"];" << std::endl;
             } else {
                 int i = 0;
                 for(auto & param: child->getArguments()) {
                     dotFileWrite << node->getFunctionName() << node << " -> " << 
                          child->getFunctionName() << child << "[label=\" "; 
                     dotFileWrite << param << "," << std::to_string(child->getCallCount()) << "x";
-                    dotFileWrite << "\", color=\"" << std::hex << child->getColor()[i] << "\"];" << std::endl;
-                    i++;
+                    dotFileWrite << "\", color=\"" << "black" << "\"];" << std::endl;
                 }
-            }
+            } 
         }
     }
     dotFileWrite << "}" << std::endl;

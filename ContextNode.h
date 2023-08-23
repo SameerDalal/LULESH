@@ -27,8 +27,6 @@ private:
 
     bool parallelBlock;
 
-    std::vector<std::string> color;
-
 public:
     ContextNode(        void* frame_addr, 
                         void* return_addr, 
@@ -80,10 +78,7 @@ public:
     void setParallelBlock(bool isParallel);
     
     bool getParallelBlock();
-
-    std::vector<std::string> getColor();
-
-    void setColor(std::string color);
+    
 };
 
 #endif
